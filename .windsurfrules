@@ -1,0 +1,47 @@
+# Windsurf Rules for TypeScript Projects
+
+## TypeScript Rules
+
+- Use strict mode in tsconfig.json
+- Maintain consistent naming conventions (camelCase for variables/functions, PascalCase for classes/interfaces)
+- Prefer interfaces over type aliases for object definitions
+- Use explicit return types for functions
+- Avoid using 'any' type when possible
+- Enable strict null checks
+- Use async/await over raw promises
+- Keep files focused on a single responsibility
+
+## Code Quality
+
+- Maximum line length: 100 characters
+- Use ESLint with TypeScript parser
+- Follow Prettier formatting rules
+- No unused variables or imports
+- No commented-out code in production
+- Write meaningful variable and function names
+
+## Testing
+
+- Maintain test coverage above 80%
+- Write tests for all new features
+- Use Jest for unit testing
+- Mock external dependencies in tests
+
+## Commit Message Format
+
+- Follow Conventional Commits specification ([https://www.conventionalcommits.org/)](https://www.conventionalcommits.org/))
+- Format: <type>(<scope>): <description>
+- Types: feat, fix, docs, style, refactor, perf, test, build, ci, chore, revert
+- Example: feat(auth): implement JWT authentication
+- Breaking changes must be noted with BREAKING CHANGE: in commit body
+- Commit messages should be descriptive but concise
+
+## Semantic Release
+
+- Use semantic-release for version management
+- Commit types determine version changes:
+  - feat: minor version bump (new feature)
+  - fix: patch version bump (bug fix)
+  - BREAKING CHANGE: major version bump
+- Generate release notes automatically from commit messages
+- Tag releases in git repository
