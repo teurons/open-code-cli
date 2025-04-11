@@ -2,7 +2,7 @@ import { Argv } from 'yargs'
 import { logger } from '../logger'
 import { bold, green } from 'picocolors'
 
-interface GreetingArgv {}
+type GreetingArgv = object
 
 export const command = 'greeting'
 export const describe = 'Displays interactive prompts to demonstrate user input handling.'
