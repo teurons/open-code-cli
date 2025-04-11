@@ -15,7 +15,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+ssh://git@github.com/rjvim/open-code-cli.git"
+    "url": "git+ssh://git@github.com/teurons/open-code-cli.git"
   },
   "scripts": {
     "build": "tsup-node",
