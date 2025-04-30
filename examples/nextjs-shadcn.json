@@ -2,7 +2,7 @@
   "workflow": [
     {
       "task": "execute",
-      "command": "pnpm create next-app@latest my-app --typescript --tailwind --eslint"
+      "command": "pnpm create next-app@latest my-app --typescript --tailwind --eslint --yes"
     },
     {
       "task": "execute",
