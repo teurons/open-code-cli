@@ -1,0 +1,84 @@
+{
+  "workflow": [
+    {
+      "task": "execute",
+      "command": "pnpm create next-app@latest my-blog --typescript --tailwind --eslint"
+    },
+    {
+      "task": "execute",
+      "command": "pnpm create fumadocs-app"
+    },
+    {
+      "task": "install",
+      "package": "zod"
+    },
+    {
+      "task": "execute",
+      "commands": [
+        "pnpm dlx shadcn@latest init",
+        "pnpm dlx shadcn@latest add button popover badge card",
+        "pnpm dlx shadcn@latest add https://21st.dev/r/designali-in/book"
+      ]
+    },
+    {
+      "task": "fetch",
+      "sources": [
+        {
+          "url": "gh:rjvim/rjvim.github.io/packages/fumadocs-blog/src",
+          "dest": "fumadocs-blog",
+          "force": true
+        },
+        {
+          "url": "gh:rjvim/rjvim.github.io/apps/web/app/(home)/blog",
+          "dest": "app/(home)/blog",
+          "force": true
+        },
+        {
+          "url": "gh:rjvim/rjvim.github.io/apps/web/app/blog-og",
+          "dest": "app/blog-og",
+          "force": true
+        }
+      ]
+    },
+    {
+      "task": "replace",
+      "replacements": [
+        {
+          "file": "app/(home)/blog/[[...slug]]/page.tsx",
+          "from": "@repo/fumadocs-blog/blog",
+          "to": "@/fumadocs-blog"
+        },
+        {
+          "file": "app/blog-og/[[...slug]]/route.tsx",
+          "from": "@repo/fumadocs-blog/blog",
+          "to": "@/fumadocs-blog"
+        }
+      ]
+    },
+    {
+      "task": "write",
+      "files": [
+        {
+          "path": "source.config.ts",
+          "content": "<blog_collection_config>"
+        },
+        {
+          "path": "lib/source.ts",
+          "content": "<blog_source_config>"
+        },
+        {
+          "path": "blog-configuration.tsx",
+          "content": "<blog_config>"
+        },
+        {
+          "path": "global.css",
+          "append": "@import \"../fumadocs-blog/styles/globals.css\";"
+        },
+        {
+          "path": "content/blog/idea/zero-trust-security.mdx",
+          "content": "<sample_post>"
+        }
+      ]
+    }
+  ]
+}

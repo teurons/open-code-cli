@@ -1,0 +1,12 @@
+{
+  "workflow": [
+    {
+      "task": "execute",
+      "command": "pnpm create next-app@latest my-app --typescript --tailwind --eslint"
+    },
+    {
+      "task": "execute",
+      "commands": ["pnpm dlx shadcn@latest init", "pnpm dlx shadcn@latest add button"]
+    }
+  ]
+}
