@@ -9,7 +9,7 @@
     },
     {
       "task": "npm_cmd",
-      "command": "create next-app@latest {{app_name}} --typescript --tailwind --eslint --yes",
+      "command": "create next-app@latest {{app_name}} --app --typescript --tailwind --eslint --yes",
       "package_manager": "auto"
     },
     {
@@ -29,13 +29,43 @@
     },
     {
       "task": "npm_install",
-      "package": "zod fumadocs-ui fumadocs-core",
+      "packages": ["zod", "fumadocs-ui", "fumadocs-core", "fumadocs-mdx", "@types/mdx"],
       "package_manager": "auto"
     },
     {
-      "task": "npm_cmd",
-      "commands": ["giget gh:fuma-nama/fumadocs/examples/next-mdx/mdx-components.tsx . --force"],
-      "package_manager": "auto"
+      "task": "gh_fetch",
+      "items": [
+        {
+          "repo": "fuma-nama/fumadocs",
+          "source": "examples/next-mdx/mdx-components.tsx",
+          "destination": "src/mdx-components.tsx",
+          "type": "file"
+        },
+        {
+          "repo": "fuma-nama/fumadocs",
+          "source": "examples/next-mdx/next.config.mjs",
+          "destination": "next.config.mjs",
+          "type": "file"
+        },
+        {
+          "repo": "rjvim/rjvim.github.io",
+          "source": "packages/fumadocs-blog/src",
+          "destination": "fumadocs-blog",
+          "type": "directory"
+        },
+        {
+          "repo": "rjvim/rjvim.github.io",
+          "source": "apps/web/app/(home)/blog",
+          "destination": "app/(home)/blog",
+          "type": "directory"
+        },
+        {
+          "repo": "rjvim/rjvim.github.io",
+          "source": "apps/web/app/blog-og",
+          "destination": "app/blog-og",
+          "type": "directory"
+        }
+      ]
     }
   ]
 }

@@ -2,6 +2,7 @@ import { ExecuteTask } from './execute';
 import { PromptTask } from './prompt';
 import { NpmCommandTask } from './npm-cmd';
 import { NpmInstallTask } from './npm-install';
+import { GhFetchTask } from './gh-fetch';
 import { createTaskRegistry } from './registry';
 import { TaskRunner } from './runner';
 import { Task, TaskConfig, TaskContext, TaskRegistry, WorkflowConfig } from './types';
@@ -16,6 +17,7 @@ const createDefaultTaskRegistry = (): TaskRegistry => {
   registry.registerTask('prompt', new PromptTask());
   registry.registerTask('npm_cmd', new NpmCommandTask());
   registry.registerTask('npm_install', new NpmInstallTask());
+  registry.registerTask('gh_fetch', new GhFetchTask());
   
   return registry;
 };
@@ -33,5 +35,6 @@ export {
   PromptTask,
   NpmCommandTask,
   NpmInstallTask,
+  GhFetchTask,
   context
 };
