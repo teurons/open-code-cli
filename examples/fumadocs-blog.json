@@ -9,7 +9,7 @@
     },
     {
       "task": "npm_cmd",
-      "command": "create next-app@latest {{app_name}} --app --typescript --tailwind --eslint --yes",
+      "command": "create next-app@latest {{app_name}} --no-src-dir --app --typescript --tailwind --eslint --yes",
       "package_manager": "auto"
     },
     {
@@ -21,7 +21,7 @@
     {
       "task": "npm_cmd",
       "commands": [
-        "shadcn@latest init",
+        "shadcn@latest init --base-color neutral --yes",
         "shadcn@latest add button popover badge card",
         "shadcn@latest add https://21st.dev/r/designali-in/book"
       ],
@@ -33,12 +33,30 @@
       "package_manager": "auto"
     },
     {
+      "task": "edit_json",
+      "file": "package.json",
+      "operations": [
+        {
+          "type": "merge",
+          "path": "scripts",
+          "value": {
+            "postinstall": "fumadocs-mdx"
+          }
+        }
+      ]
+    },
+    {
+      "task": "execute",
+      "command": "rm -f next.config.js next.config.mjs",
+      "description": "Remove existing next.config files before fetching new ones"
+    },
+    {
       "task": "gh_fetch",
       "items": [
         {
           "repo": "fuma-nama/fumadocs",
           "source": "examples/next-mdx/mdx-components.tsx",
-          "destination": "src/mdx-components.tsx",
+          "destination": "mdx-components.tsx",
           "type": "file"
         },
         {
@@ -64,6 +82,23 @@
           "source": "apps/web/app/blog-og",
           "destination": "app/blog-og",
           "type": "directory"
+        }
+      ]
+    },
+    {
+      "task": "execute",
+      "commands": [
+        "sed -i.bak 's|@repo/fumadocs-blog/blog|@/fumadocs-blog|g' 'app/(home)/blog/[[...slug]]/page.tsx' && rm -f 'app/(home)/blog/[[...slug]]/page.tsx.bak'",
+        "sed -i.bak 's|@repo/fumadocs-blog/blog|@/fumadocs-blog|g' 'app/blog-og/[[...slug]]/route.tsx' && rm -f 'app/blog-og/[[...slug]]/route.tsx.bak'"
+      ],
+      "description": "Fix import paths in the fetched files"
+    },
+    {
+      "task": "write",
+      "files": [
+        {
+          "path": "source.config.ts",
+          "content": "import {\n  defineDocs,\n  defineConfig,\n  defineCollections,\n  frontmatterSchema,\n} from \"fumadocs-mdx/config\";\nimport { z } from \"zod\";\n\nexport const blog = defineCollections({\n  type: \"doc\",\n  dir: \"content/blog\",\n  schema: frontmatterSchema.extend({\n    author: z.string(),\n    date: z\n      .string()\n      .or(z.date())\n      .transform((value, context) => {\n        try {\n          return new Date(value);\n        } catch {\n          context.addIssue({\n            code: z.ZodIssueCode.custom,\n            message: \"Invalid date\",\n          });\n          return z.NEVER;\n        }\n      }),\n    tags: z.array(z.string()).optional(),\n    image: z.string().optional(),\n    draft: z.boolean().optional().default(false),\n    series: z.string().optional(),\n    seriesPart: z.number().optional(),\n  }),\n});\n"
         }
       ]
     }

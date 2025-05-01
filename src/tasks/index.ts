@@ -3,6 +3,7 @@ import { PromptTask } from './prompt';
 import { NpmCommandTask } from './npm-cmd';
 import { NpmInstallTask } from './npm-install';
 import { GhFetchTask } from './gh-fetch';
+import { EditJsonTask } from './edit-json';
 import { createTaskRegistry } from './registry';
 import { TaskRunner } from './runner';
 import { Task, TaskConfig, TaskContext, TaskRegistry, WorkflowConfig } from './types';
@@ -18,6 +19,7 @@ const createDefaultTaskRegistry = (): TaskRegistry => {
   registry.registerTask('npm_cmd', new NpmCommandTask());
   registry.registerTask('npm_install', new NpmInstallTask());
   registry.registerTask('gh_fetch', new GhFetchTask());
+  registry.registerTask('edit_json', new EditJsonTask());
   
   return registry;
 };
@@ -36,5 +38,6 @@ export {
   NpmCommandTask,
   NpmInstallTask,
   GhFetchTask,
+  EditJsonTask,
   context
 };
