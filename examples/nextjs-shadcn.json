@@ -1,12 +1,22 @@
 {
   "workflow": [
     {
-      "task": "execute",
-      "command": "pnpm create next-app@latest my-app --typescript --tailwind --eslint --yes"
+      "task": "prompt",
+      "name": "app_name",
+      "message": "Enter the name of your app",
+      "type": "input",
+      "default": "my-app"
     },
     {
       "task": "execute",
-      "commands": ["pnpm dlx shadcn@latest init", "pnpm dlx shadcn@latest add button"]
+      "command": "create next-app@latest {{app_name}} --typescript --tailwind --eslint --yes",
+      "package_manager": "auto"
+    },
+    {
+      "task": "execute",
+      "commands": ["cd {{app_name}}", "dlx shadcn@latest init", "dlx shadcn@latest add button"],
+      "package_manager": "auto",
+      "depends": ["app_name"]
     }
   ]
 }
