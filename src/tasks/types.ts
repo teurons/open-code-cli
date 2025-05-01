@@ -7,6 +7,7 @@ export interface TaskContext {
   cwd: string;
   config: Record<string, any>;
   taskRegistry: TaskRegistry;
+  updateWorkingDir?: (newDir: string) => void;
 }
 
 export interface TaskRegistry {

@@ -8,15 +8,20 @@
       "default": "my-app"
     },
     {
-      "task": "execute",
+      "task": "npm_cmd",
       "command": "create next-app@latest {{app_name}} --typescript --tailwind --eslint --yes",
       "package_manager": "auto"
     },
     {
       "task": "execute",
-      "commands": ["cd {{app_name}}", "dlx shadcn@latest init", "dlx shadcn@latest add button"],
+      "command": "cd {{app_name}}",
       "package_manager": "auto",
       "depends": ["app_name"]
+    },
+    {
+      "task": "npm_cmd",
+      "commands": ["shadcn@latest init", "shadcn@latest add button"],
+      "package_manager": "auto"
     }
   ]
 }

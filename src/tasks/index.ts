@@ -1,7 +1,11 @@
 import { ExecuteTask } from './execute';
+import { PromptTask } from './prompt';
+import { NpmCommandTask } from './npm-cmd';
+import { NpmInstallTask } from './npm-install';
 import { createTaskRegistry } from './registry';
 import { TaskRunner } from './runner';
 import { Task, TaskConfig, TaskContext, TaskRegistry, WorkflowConfig } from './types';
+import { context } from '../context';
 
 // Create and configure the default task registry
 const createDefaultTaskRegistry = (): TaskRegistry => {
@@ -9,6 +13,9 @@ const createDefaultTaskRegistry = (): TaskRegistry => {
   
   // Register built-in tasks
   registry.registerTask('execute', new ExecuteTask());
+  registry.registerTask('prompt', new PromptTask());
+  registry.registerTask('npm_cmd', new NpmCommandTask());
+  registry.registerTask('npm_install', new NpmInstallTask());
   
   return registry;
 };
@@ -22,5 +29,9 @@ export {
   TaskRunner,
   createTaskRegistry,
   createDefaultTaskRegistry,
-  ExecuteTask
+  ExecuteTask,
+  PromptTask,
+  NpmCommandTask,
+  NpmInstallTask,
+  context
 };
