@@ -1,74 +1,73 @@
 {
   "workflow": [
     {
-      "task": "execute",
-      "command": "pnpm create next-app@latest my-blog --typescript --tailwind --eslint"
+      "task": "prompt",
+      "name": "app_name",
+      "message": "Enter the name of your blog",
+      "type": "input",
+      "default": "my-blog"
+    },
+    {
+      "task": "npm_cmd",
+      "command": "create next-app@latest {{app_name}} --typescript --tailwind --eslint --yes",
+      "package_manager": "auto"
     },
     {
       "task": "execute",
-      "command": "pnpm create fumadocs-app"
+      "command": "cd {{app_name}}",
+      "package_manager": "auto",
+      "depends": ["app_name"]
     },
     {
-      "task": "install",
-      "package": "zod"
+      "task": "npm_cmd",
+      "command": "create fumadocs-app",
+      "package_manager": "auto"
+    },
+    {
+      "task": "npm_install",
+      "package": "zod",
+      "package_manager": "auto"
+    },
+    {
+      "task": "npm_cmd",
+      "commands": [
+        "shadcn@latest init", 
+        "shadcn@latest add button popover badge card",
+        "shadcn@latest add https://21st.dev/r/designali-in/book"
+      ],
+      "package_manager": "auto"
+    },
+    {
+      "task": "npm_cmd",
+      "commands": [
+        "giget gh:rjvim/rjvim.github.io/packages/fumadocs-blog/src fumadocs-blog --force",
+        "giget gh:rjvim/rjvim.github.io/apps/web/app/(home)/blog app/(home)/blog --force",
+        "giget gh:rjvim/rjvim.github.io/apps/web/app/blog-og app/blog-og --force"
+      ],
+      "package_manager": "auto"
     },
     {
       "task": "execute",
       "commands": [
-        "pnpm dlx shadcn@latest init",
-        "pnpm dlx shadcn@latest add button popover badge card",
-        "pnpm dlx shadcn@latest add https://21st.dev/r/designali-in/book"
-      ]
-    },
-    {
-      "task": "fetch",
-      "sources": [
-        {
-          "url": "gh:rjvim/rjvim.github.io/packages/fumadocs-blog/src",
-          "dest": "fumadocs-blog",
-          "force": true
-        },
-        {
-          "url": "gh:rjvim/rjvim.github.io/apps/web/app/(home)/blog",
-          "dest": "app/(home)/blog",
-          "force": true
-        },
-        {
-          "url": "gh:rjvim/rjvim.github.io/apps/web/app/blog-og",
-          "dest": "app/blog-og",
-          "force": true
-        }
-      ]
-    },
-    {
-      "task": "replace",
-      "replacements": [
-        {
-          "file": "app/(home)/blog/[[...slug]]/page.tsx",
-          "from": "@repo/fumadocs-blog/blog",
-          "to": "@/fumadocs-blog"
-        },
-        {
-          "file": "app/blog-og/[[...slug]]/route.tsx",
-          "from": "@repo/fumadocs-blog/blog",
-          "to": "@/fumadocs-blog"
-        }
-      ]
+        "sed -i.bak 's|@repo/fumadocs-blog/blog|@/fumadocs-blog|g' 'app/(home)/blog/[[...slug]]/page.tsx' && rm -f 'app/(home)/blog/[[...slug]]/page.tsx.bak'",
+        "sed -i.bak 's|@repo/fumadocs-blog/blog|@/fumadocs-blog|g' 'app/blog-og/[[...slug]]/route.tsx' && rm -f 'app/blog-og/[[...slug]]/route.tsx.bak'"
+      ],
+      "description": "Fix import paths in the fetched files"
     },
     {
       "task": "write",
       "files": [
         {
           "path": "source.config.ts",
-          "content": "<blog_collection_config>"
+          "content": "import {\n  defineDocs,\n  defineConfig,\n  defineCollections,\n  frontmatterSchema,\n} from \"fumadocs-mdx/config\";\nimport { z } from \"zod\";\n\nexport const blog = defineCollections({\n  type: \"doc\",\n  dir: \"content/blog\",\n  schema: frontmatterSchema.extend({\n    author: z.string(),\n    date: z\n      .string()\n      .or(z.date())\n      .transform((value, context) => {\n        try {\n          return new Date(value);\n        } catch {\n          context.addIssue({\n            code: z.ZodIssueCode.custom,\n            message: \"Invalid date\",\n          });\n          return z.NEVER;\n        }\n      }),\n    tags: z.array(z.string()).optional(),\n    image: z.string().optional(),\n    draft: z.boolean().optional().default(false),\n    series: z.string().optional(),\n    seriesPart: z.number().optional(),\n  }),\n});\n"
         },
         {
           "path": "lib/source.ts",
-          "content": "<blog_source_config>"
+          "content": "import { docs, blog } from \"@/.source\";\nimport { loader } from \"fumadocs-core/source\";\nimport { createMDXSource } from \"fumadocs-mdx\";\n\nexport const blogSource = loader({\n  baseUrl: \"/blog\",\n  source: createMDXSource(blog),\n});\n\nexport const {\n  getPage: getBlogPost,\n  getPages: getBlogPosts,\n  pageTree: pageBlogTree,\n} = blogSource;\n\nexport type BlogPost = ReturnType<typeof getBlogPost>;\n"
         },
         {
           "path": "blog-configuration.tsx",
-          "content": "<blog_config>"
+          "content": "import type { Metadata } from \"next/types\";\nimport { cn } from \"@/lib/utils\";\nimport { Button } from \"@/components/ui/button\";\nimport {\n  Popover,\n  PopoverContent,\n  PopoverTrigger,\n} from \"@/components/ui/popover\";\nimport { Badge } from \"@/components/ui/badge\";\nimport { Book } from \"@/components/ui/book\";\nimport { Card } from \"@/components/ui/card\";\nimport type { BlogConstants, BlogConfiguration } from \"@/fumadocs-blog\";\nimport { PostCard } from \"@/fumadocs-blog\";\nimport {\n  Brain,\n  Book as LucideBook,\n  Code,\n  Cog,\n  Lightbulb,\n  Megaphone,\n  Rocket,\n  Users,\n  Wrench,\n  BookIcon,\n} from \"lucide-react\";\n\n// Blog text constants that can be customized\n\nexport const blogConstants: BlogConstants = {\n  // General\n  blogTitle: \"Blog\",\n  blogDescription: \"Articles and thoughts\",\n  siteName: \"myblog.com\",\n  defaultAuthorName: \"My Name\",\n  xUsername: \"@my_x_username\",\n  // Pagination\n  paginationTitle: (page: number) => `Blog - Page ${page}`,\n  paginationDescription: (page: number) =>\n    `Articles and thoughts - Page ${page}`,\n  categoryPaginationTitle: (category: string, page: number) =>\n    `${category.charAt(0).toUpperCase() + category.slice(1)} - Page ${page}`,\n  categoryPaginationDescription: (category: string, page: number) =>\n    `Articles in the ${category} category - Page ${page}`,\n  // URLs\n  blogBase: \"/blog\",\n  blogOgImageBase: \"blog-og\",\n  pageSize: 5,\n};\n\nexport function createBlogMetadata(\n  override: Metadata,\n  blogConstants: BlogConstants\n): Metadata {\n  // Derive values from the core properties\n  const siteUrl = `https://${blogConstants.siteName}`;\n  const author = {\n    name: blogConstants.defaultAuthorName,\n    url: siteUrl,\n  };\n  const creator = blogConstants.defaultAuthorName;\n\n  return {\n    ...override,\n    authors: [author],\n    creator: creator,\n    openGraph: {\n      title: override.title ?? undefined,\n      description: override.description ?? undefined,\n      url: siteUrl,\n      siteName: blogConstants.siteName,\n      ...override.openGraph,\n    },\n    twitter: {\n      card: \"summary_large_image\",\n      site: blogConstants.xUsername,\n      creator: blogConstants.xUsername,\n      title: override.title ?? undefined,\n      description: override.description ?? undefined,\n      ...override.twitter,\n    },\n    alternates: {\n      canonical: \"/\",\n      types: {\n        \"application/rss+xml\": \"/api/rss.xml\",\n      },\n      ...override.alternates,\n    },\n  };\n}\n\nexport function getBlogConfiguration(): BlogConfiguration {\n  return {\n    PostCard: PostCard,\n    Button,\n    Popover,\n    PopoverContent,\n    PopoverTrigger,\n    Badge,\n    Book,\n    Card,\n    cn,\n    config: {\n      blogBase: blogConstants.blogBase,\n      blogOgImageBase: blogConstants.blogOgImageBase,\n      pageSize: 5,\n    },\n  };\n}\n\nexport const useBlogConfiguration = getBlogConfiguration;\n\n// Moved from lib/categories.ts\nexport const getCategoryBySlug = (slug: string) => {\n  const categories = {\n    idea: {\n      label: \"Idea\",\n      icon: Brain,\n      description:\n        \"Exploratory thoughts and wild concepts for Teurons and beyond.\",\n    },\n    opinions: {\n      label: \"Opinions\",\n      icon: Megaphone,\n      description:\n        \"Subjective, wild, gut-hunch takes—less informed, out-of-box rants.\",\n    },\n  };\n\n  return (\n    categories[slug as keyof typeof categories] || {\n      label: slug.toString().replace(/-/g, \" \").toLowerCase(),\n      icon: BookIcon,\n    }\n  );\n};\n\nexport const getSeriesBySlug = (slug: string) => {\n  const series = {\n    x: {\n      label: \"Series X\",\n      icon: LucideBook,\n      description: \"A Sample Series\",\n    },\n    // Add more series here as needed\n  };\n\n  return (\n    series[slug as keyof typeof series] || {\n      label: slug.charAt(0).toUpperCase() + slug.slice(1),\n      icon: LucideBook,\n      description: `Articles in the ${\n        slug.charAt(0).toUpperCase() + slug.slice(1)\n      } series.`,\n    }\n  );\n};\n"
         },
         {
           "path": "global.css",
@@ -76,7 +75,7 @@
         },
         {
           "path": "content/blog/idea/zero-trust-security.mdx",
-          "content": "<sample_post>"
+          "content": "---\ntitle: Setup a Blog with NextJS & Fuma Docs\ndescription: A guide to setup a blog using Fuma Docs on NextJS\ndate: 2025-04-23\nauthor: rajiv\ntags: [blog, template, fumadocs, nextjs, mdx]\nimage: https://shadcnblocks.com/images/block/placeholder-5.svg\n---\n\nWhat features would you want on your blog? Here are the ones I chose:\n\n## Features\n\n- [x] Static site that can be published to GitHub Pages\n- [x] MDX support: I work on frontend code, so I need to embed React components in my posts\n- [x] Search\n- [x] Table of contents (Clerk style)\n- [x] A Blog Post\n- [x] List of Posts with Pagination\n- [x] Categories\n- [x] Series\n- [ ] Tags (WIP)\n- [x] Metadata with Social Images\n- [x] Static (yes, repeating for emphasis)\n\n## Setup\n\nThe official FumaDocs documentation has an article on setting up a blog: [Setup a Blog](https://fumadocs.vercel.app/blog/make-a-blog). Using that as a foundation, I built my blog with the features above.\n\nYou can proceed in two ways:\n\n- Clone the current repo\n- Follow the steps below to add these features to your existing Next.js site\n\n### Install and Configure Fuma Docs\n\n<Steps>\n\n<Step>\n\n### Install Fuma Docs\n\nYou need a working Fuma Docs setup. If you don't have one, create it using the following command:\n\n```package-install\npnpm create fumadocs-app\n```\n\nOr you can configure FumaDocs [manually](https://fumadocs.vercel.app/docs/ui/manual-installation).\n\nAt this point, you should have a basic setup ready with the files: `source.config.ts` and `lib/source.ts`.\n\n</Step>\n\n<Step>\n\n### Setup ShadCN Components\n\nIf you already have shadcn set up, you don't need to run the following command.\n\n```bash\npnpm dlx shadcn@latest init\n```\n\nWe need the following components:\n\n- button\n- popover\n- badge\n- card\n\nYou can add all of the above with:\n\n```bash\npnpm dlx shadcn@latest add button popover badge card\n```\n\nWe also need a **book** icon component, which is used when displaying series:\n\n```bash\npnpm dlx shadcn@latest add \"https://21st.dev/r/designali-in/book\"\n```\n\n</Step>\n\n<Step>\n\n### Define a Collection for Blog\n\nInstall `zod` as we will use it to add a frontmatter schema.\n\n```package-install\nzod\n```\n\nNow define a collection for the blog. Add the following:\n\n```ts title=\"source.config.ts\"\nimport {\n  defineDocs,\n  defineConfig,\n  defineCollections,\n  frontmatterSchema,\n} from \"fumadocs-mdx/config\";\nimport { z } from \"zod\";\n\nexport const blog = defineCollections({\n  type: \"doc\",\n  dir: \"content/blog\",\n  schema: frontmatterSchema.extend({\n    author: z.string(),\n    date: z\n      .string()\n      .or(z.date())\n      .transform((value, context) => {\n        try {\n          return new Date(value);\n        } catch {\n          context.addIssue({\n            code: z.ZodIssueCode.custom,\n            message: \"Invalid date\",\n          });\n          return z.NEVER;\n        }\n      }),\n    tags: z.array(z.string()).optional(),\n    image: z.string().optional(),\n    draft: z.boolean().optional().default(false),\n    series: z.string().optional(),\n    seriesPart: z.number().optional(),\n  }),\n});\n```\n\nAdd the following to `lib/source.ts`:\n\n```ts title=\"lib/source.ts\"\nimport { docs, blog } from \"@/.source\";\nimport { loader } from \"fumadocs-core/source\";\nimport { createMDXSource } from \"fumadocs-mdx\";\n\nexport const blogSource = loader({\n  baseUrl: \"/blog\",\n  source: createMDXSource(blog),\n});\n\nexport const {\n  getPage: getBlogPost,\n  getPages: getBlogPosts,\n  pageTree: pageBlogTree,\n} = blogSource;\n\nexport type BlogPost = ReturnType<typeof getBlogPost>;\n```\n\n</Step>\n\n<Step>\n\n### Add fumadocs-blog components\n\nThere are multiple features, so instead of adding files one by one, we'll copy entire folders using the giget command.\n\n**Add all the required components**\n\n```bash\nnpx giget gh:rjvim/rjvim.github.io/packages/fumadocs-blog/src fumadocs-blog --force\n```\n\n**Add /blog route page**\n\n```bash\nnpx giget gh:rjvim/rjvim.github.io/apps/web/app/(home)/blog app/(home)/blog --force\n```\n\n**Add /blog-og route page**\n\n```bash\nnpx giget gh:rjvim/rjvim.github.io/apps/web/app/blog-og app/blog-og --force\n```\n\n**Correct the imports**\n\n_The original components are built to work with a monorepo, so we need to correct the imports._\n\nRun the following commands:\n\n```bash\nsed -i.bak 's|@repo/fumadocs-blog/blog|@/fumadocs-blog|g' 'app/(home)/blog/[[...slug]]/page.tsx' && rm -f 'app/(home)/blog/[[...slug]]/page.tsx.bak'\n```\n\n```bash\nsed -i.bak 's|@repo/fumadocs-blog/blog|@/fumadocs-blog|g' 'app/blog-og/[[...slug]]/route.tsx' && rm -f 'app/blog-og/[[...slug]]/route.tsx.bak'\n```\n\n**Add styles to global.css**\n\n```css title=\"global.css\"\n@import \"../fumadocs-blog/styles/globals.css\";\n```\n\n</Step>\n\n<Step>\n\n### Configure the blog\n\nIf fumadocs-blog was an npm package, all the above steps would be handled by that. Now, we need to configure the blog. Blog configuration drives following:\n\n- Metadata\n- Components\n- Categories\n- Series\n- Others\n\n_I will document a detailed guide, but as of now the following should give majority of the idea_\n\nAdd the following file in your repo at root path, we import this using `@/blog-configuration`.\n\n```tsx title=\"blog-configuration.tsx\"\nimport type { Metadata } from \"next/types\";\nimport { cn } from \"@/lib/utils\";\nimport { Button } from \"@/components/ui/button\";\nimport {\n  Popover,\n  PopoverContent,\n  PopoverTrigger,\n} from \"@/components/ui/popover\";\nimport { Badge } from \"@/components/ui/badge\";\nimport { Book } from \"@/components/ui/book\";\nimport { Card } from \"@/components/ui/card\";\nimport type { BlogConstants, BlogConfiguration } from \"@/fumadocs-blog\";\nimport { PostCard } from \"@/fumadocs-blog\";\nimport {\n  Brain,\n  Book as LucideBook,\n  Code,\n  Cog,\n  Lightbulb,\n  Megaphone,\n  Rocket,\n  Users,\n  Wrench,\n  BookIcon,\n} from \"lucide-react\";\n\n// Blog text constants that can be customized\n\nexport const blogConstants: BlogConstants = {\n  // General\n  blogTitle: \"Blog\",\n  blogDescription: \"Articles and thoughts\",\n  siteName: \"myblog.com\",\n  defaultAuthorName: \"My Name\",\n  xUsername: \"@my_x_username\",\n  // Pagination\n  paginationTitle: (page: number) => `Blog - Page ${page}`,\n  paginationDescription: (page: number) =>\n    `Articles and thoughts - Page ${page}`,\n  categoryPaginationTitle: (category: string, page: number) =>\n    `${category.charAt(0).toUpperCase() + category.slice(1)} - Page ${page}`,\n  categoryPaginationDescription: (category: string, page: number) =>\n    `Articles in the ${category} category - Page ${page}`,\n  // URLs\n  blogBase: \"/blog\",\n  blogOgImageBase: \"blog-og\",\n  pageSize: 5,\n};\n\nexport function createBlogMetadata(\n  override: Metadata,\n  blogConstants: BlogConstants\n): Metadata {\n  // Derive values from the core properties\n  const siteUrl = `https://${blogConstants.siteName}`;\n  const author = {\n    name: blogConstants.defaultAuthorName,\n    url: siteUrl,\n  };\n  const creator = blogConstants.defaultAuthorName;\n\n  return {\n    ...override,\n    authors: [author],\n    creator: creator,\n    openGraph: {\n      title: override.title ?? undefined,\n      description: override.description ?? undefined,\n      url: siteUrl,\n      siteName: blogConstants.siteName,\n      ...override.openGraph,\n    },\n    twitter: {\n      card: \"summary_large_image\",\n      site: blogConstants.xUsername,\n      creator: blogConstants.xUsername,\n      title: override.title ?? undefined,\n      description: override.description ?? undefined,\n      ...override.twitter,\n    },\n    alternates: {\n      canonical: \"/\",\n      types: {\n        \"application/rss+xml\": \"/api/rss.xml\",\n      },\n      ...override.alternates,\n    },\n  };\n}\n\nexport function getBlogConfiguration(): BlogConfiguration {\n  return {\n    PostCard: PostCard,\n    Button,\n    Popover,\n    PopoverContent,\n    PopoverTrigger,\n    Badge,\n    Book,\n    Card,\n    cn,\n    config: {\n      blogBase: blogConstants.blogBase,\n      blogOgImageBase: blogConstants.blogOgImageBase,\n      pageSize: 5,\n    },\n  };\n}\n\nexport const useBlogConfiguration = getBlogConfiguration;\n\n// Moved from lib/categories.ts\nexport const getCategoryBySlug = (slug: string) => {\n  const categories = {\n    idea: {\n      label: \"Idea\",\n      icon: Brain,\n      description:\n        \"Exploratory thoughts and wild concepts for Teurons and beyond.\",\n    },\n    opinions: {\n      label: \"Opinions\",\n      icon: Megaphone,\n      description:\n        \"Subjective, wild, gut-hunch takes—less informed, out-of-box rants.\",\n    },\n  };\n\n  return (\n    categories[slug as keyof typeof categories] || {\n      label: slug.toString().replace(/-/g, \" \").toLowerCase(),\n      icon: BookIcon,\n    }\n  );\n};\n\nexport const getSeriesBySlug = (slug: string) => {\n  const series = {\n    x: {\n      label: \"Series X\",\n      icon: LucideBook,\n      description: \"A Sample Series\",\n    },\n    // Add more series here as needed\n  };\n\n  return (\n    series[slug as keyof typeof series] || {\n      label: slug.charAt(0).toUpperCase() + slug.slice(1),\n      icon: LucideBook,\n      description: `Articles in the ${\n        slug.charAt(0).toUpperCase() + slug.slice(1)\n      } series.`,\n    }\n  );\n};\n"
         }
       ]
     }

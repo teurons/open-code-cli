@@ -65,7 +65,7 @@ export class Context {
    * Replace variables in an array of strings
    */
   public replaceVariablesInArray(array: string[]): string[] {
-    return array.map(item => this.replaceVariables(item))
+    return array.map((item) => this.replaceVariables(item))
   }
 
   /**
