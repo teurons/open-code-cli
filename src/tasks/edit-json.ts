@@ -105,7 +105,7 @@ export class EditJsonTask implements Task {
       }
 
       // Write back to file
-      writeFileSync(filePath, JSON.stringify(jsonData, null, 2) + '\\n');
+      writeFileSync(filePath, JSON.stringify(jsonData, null, 2) + '\n');
       logger.success(`Successfully updated ${filePath}`);
     } catch (e) {
       throw new Error(`Failed to edit JSON file ${filePath}: ${(e as Error).message}`);

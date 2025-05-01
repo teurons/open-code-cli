@@ -5,10 +5,10 @@ import { detect } from '@antfu/ni';
 import { execSync } from 'child_process';
 
 /**
- * Task for executing basic package manager commands
- * This is for running commands like npm install, npm run dev, etc.
+ * Task for executing npm/yarn/pnpm commands with dlx/npx transformations
+ * This is for running commands like create-next-app, shadcn, etc.
  */
-export class NpmCommandTask implements Task {
+export class NpmExecuteTask implements Task {
   public async execute(taskContext: TaskContext): Promise<void> {
     const { command, commands, package_manager = 'auto', depends } = taskContext.config;
     const { cwd } = taskContext;
@@ -31,7 +31,7 @@ export class NpmCommandTask implements Task {
     }
 
     if (cmds.length === 0) {
-      throw new Error('NpmCommand task requires either "command" or "commands" property');
+      throw new Error('NpmExecute task requires either "command" or "commands" property');
     }
 
     // Replace variables in commands
@@ -49,9 +49,10 @@ export class NpmCommandTask implements Task {
       }
     }
 
-    // Execute commands with the package manager
+    // Execute commands with the appropriate package manager prefix
     for (const cmd of processedCommands) {
-      const finalCmd = `${pm} ${cmd}`;
+      // Transform the command based on the package manager
+      const finalCmd = this.transformCommand(cmd, pm);
       
       logger.info(`Executing: ${finalCmd}`);
       
@@ -66,5 +67,35 @@ export class NpmCommandTask implements Task {
 
   public validate(config: Record<string, any>): boolean {
     return Boolean(config.command || (config.commands && Array.isArray(config.commands)));
+  }
+
+  private transformCommand(command: string, packageManager: string): string {
+    // Handle package manager specific command transformations
+    if (command.startsWith('create ')) {
+      // create-* commands
+      const createCmd = command.substring(7);
+      switch (packageManager) {
+        case 'npm':
+          return `npx ${createCmd}`;
+        case 'pnpm':
+          return `pnpm create ${createCmd}`;
+        case 'yarn':
+          return `yarn create ${createCmd}`;
+        default:
+          return `npx ${createCmd}`;
+      }
+    } else if (command.includes('@latest')) {
+      // Commands with @latest (like shadcn@latest)
+      if (packageManager === 'pnpm') {
+        return `pnpm dlx ${command}`;
+      } else if (packageManager === 'yarn') {
+        return `yarn dlx ${command}`;
+      } else {
+        return `npx ${command}`;
+      }
+    }
+    
+    // Return the command as is if no transformation is needed
+    return command;
   }
 }

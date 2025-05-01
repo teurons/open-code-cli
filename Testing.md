@@ -4,6 +4,10 @@
 4. Run `./../open-code-cli/bin/run workflow ../open-code-cli/examples/nextjs-shadcn.json`
 5. Run `./../open-code-cli/bin/run workflow ../open-code-cli/examples/fumadocs-blog.json`
 
+```
+rm -rf my-blog && ./../open-code-cli/bin/run workflow ../open-code-cli/examples/fumadocs-blog.json
+```
+
 ---
 
 rjvim blog workflow
