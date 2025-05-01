@@ -6,6 +6,8 @@ import { NpmInstallTask } from './npm-install';
 import { GhFetchTask } from './gh-fetch';
 import { EditJsonTask } from './edit-json';
 import { WriteTask } from './write';
+import { PatchFileTask } from './patch-file';
+import { MergeFileTask } from './merge-file';
 import { createTaskRegistry } from './registry';
 import { TaskRunner } from './runner';
 import { Task, TaskConfig, TaskContext, TaskRegistry, WorkflowConfig } from './types';
@@ -24,6 +26,8 @@ const createDefaultTaskRegistry = (): TaskRegistry => {
   registry.registerTask('gh_fetch', new GhFetchTask());
   registry.registerTask('edit_json', new EditJsonTask());
   registry.registerTask('write', new WriteTask());
+  registry.registerTask('patch_file', new PatchFileTask());
+  registry.registerTask('merge_file', new MergeFileTask());
   
   return registry;
 };
