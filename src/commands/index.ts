@@ -1,5 +1,6 @@
 import * as greeting from './greeting'
 import * as prompt from './prompt'
 import * as workflow from './workflow'
+import * as serialize from './serialize'
 
-export const commands = [greeting, prompt, workflow]
+export const commands = [greeting, prompt, workflow, serialize]
