@@ -22,6 +22,11 @@
       "task": "npm_cmd",
       "commands": ["shadcn@latest init", "shadcn@latest add button"],
       "package_manager": "auto"
+    },
+    {
+      "task": "execute",
+      "command": "pnpm dev",
+      "package_manager": "auto"
     }
   ]
 }
