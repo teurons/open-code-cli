@@ -9,6 +9,7 @@ import { WriteTask } from './write';
 import { PatchFileTask } from './patch-file';
 import { MergeFileTask } from './merge-file';
 import { MergeTsFileTask } from './merge-ts-file';
+import { AiMergeFileTask } from './ai-merge-file';
 import { createTaskRegistry } from './registry';
 import { TaskRunner } from './runner';
 import { Task, TaskConfig, TaskContext, TaskRegistry, WorkflowConfig } from './types';
@@ -30,6 +31,7 @@ const createDefaultTaskRegistry = (): TaskRegistry => {
   registry.registerTask('patch_file', new PatchFileTask());
   registry.registerTask('merge_file', new MergeFileTask());
   registry.registerTask('merge_ts_file', new MergeTsFileTask());
+  registry.registerTask('ai_merge_file', new AiMergeFileTask());
   
   return registry;
 };
@@ -49,5 +51,6 @@ export {
   NpmInstallTask,
   GhFetchTask,
   EditJsonTask,
+  AiMergeFileTask,
   context
 };

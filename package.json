@@ -76,11 +76,15 @@
     "typescript": "^5.8.3"
   },
   "dependencies": {
+    "@ai-sdk/openai": "^1.3.21",
     "@antfu/ni": "^24.3.0",
+    "@openrouter/ai-sdk-provider": "^0.4.5",
+    "ai": "^4.3.13",
     "axios": "^1.9.0",
     "consola": "^3.4.2",
     "dotenv": "^16.5.0",
     "giget": "^2.0.0",
+    "openrouter-kit": "^0.1.60",
     "picocolors": "^1.1.1",
     "yargs": "^17.7.2"
   },

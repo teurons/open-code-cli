@@ -1,0 +1,18 @@
+{
+  "workflow": [
+    {
+      "task": "prompt",
+      "name": "openrouter_api_key",
+      "message": "Please enter your OpenRouter API key:",
+      "type": "password"
+    },
+    {
+      "task": "ai_merge_file",
+      "targetFile": "./temp/example-target.ts",
+      "sourceFile": "./temp/example-source.ts",
+      "outputFile": "./temp/merged-result.ts",
+      "model": "mistralai/mistral-small-3.1-24b-instruct:free",
+      "apiKey": "{{openrouter_api_key}}"
+    }
+  ]
+}
