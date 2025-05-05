@@ -5,6 +5,7 @@ import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'fs'
 import { join, dirname } from 'path'
 import { createOpenRouter } from '@openrouter/ai-sdk-provider'
 import { generateText } from 'ai'
+import { getOpenRouterApiKey, getOpenRouterModel } from '../utils/config'
 
 interface AiMergeConfig {
   targetFile: string // Path to the existing file
@@ -26,12 +27,20 @@ export class AiMergeFileTask implements Task {
       targetFile,
       sourceFile,
       outputFile,
-      model = 'mistralai/mistral-small-3.1-24b-instruct:free',
+      model: configModel,
       apiKey: configApiKey,
     } = config
+    
+    // Get model from config or stored configuration
+    const model = configModel || getOpenRouterModel()
 
-    // Get API key from config, context, or environment variable
-    const apiKey = configApiKey ? context.replaceVariables(configApiKey) : process.env.OPENROUTER_API_KEY || ''
+    // Get API key from config, context, environment variable, or stored configuration
+    let apiKey = configApiKey ? context.replaceVariables(configApiKey) : process.env.OPENROUTER_API_KEY || ''
+    
+    // If API key is not provided in the task or environment, try to get it from the stored configuration
+    if (!apiKey) {
+      apiKey = getOpenRouterApiKey()
+    }
 
     if (!targetFile) {
       throw new Error('targetFile is required')
