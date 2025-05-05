@@ -25,3 +25,7 @@ pnpm dlx giget gh:fuma-nama/fumadocs/examples/next-mdx/mdx-components.tsx src/md
 ```bash
 node ./dist/run.js workflow examples/ai-merge-example.json
 ```
+
+```
+node ../../open-code-cli/dist/run.js choose-workflow ../../open-code-cli/examples/fumadocs-and-blog.json
+```
