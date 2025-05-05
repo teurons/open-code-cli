@@ -47,17 +47,9 @@
       "package_manager": "auto"
     },
     {
-      "task": "edit_json",
-      "file": "package.json",
-      "operations": [
-        {
-          "type": "merge",
-          "path": "scripts",
-          "value": {
-            "postinstall": "fumadocs-mdx"
-          }
-        }
-      ]
+      "task": "ai_modify_file",
+      "path": "package.json",
+      "instruction": "Add 'postinstall': 'fumadocs-mdx' to the scripts section of the package.json file. If the scripts section doesn't exist, create it."
     },
     {
       "task": "execute",
