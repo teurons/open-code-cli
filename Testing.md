@@ -21,3 +21,7 @@ rjvim blog workflow
 8.
 
 pnpm dlx giget gh:fuma-nama/fumadocs/examples/next-mdx/mdx-components.tsx src/mdx-components.tsx --force
+
+```bash
+node ./dist/run.js workflow examples/ai-merge-example.json
+```
