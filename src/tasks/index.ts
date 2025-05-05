@@ -10,6 +10,8 @@ import { PatchFileTask } from './patch-file';
 import { MergeFileTask } from './merge-file';
 import { MergeTsFileTask } from './merge-ts-file';
 import { AiMergeFileTask } from './ai-merge-file';
+import { AiContentMergeTask } from './ai-content-merge';
+import { AiModifyFileTask } from './ai-modify-file';
 import { createTaskRegistry } from './registry';
 import { TaskRunner } from './runner';
 import { Task, TaskConfig, TaskContext, TaskRegistry, WorkflowConfig } from './types';
@@ -32,6 +34,8 @@ const createDefaultTaskRegistry = (): TaskRegistry => {
   registry.registerTask('merge_file', new MergeFileTask());
   registry.registerTask('merge_ts_file', new MergeTsFileTask());
   registry.registerTask('ai_merge_file', new AiMergeFileTask());
+  registry.registerTask('ai_content_merge', new AiContentMergeTask());
+  registry.registerTask('ai_modify_file', new AiModifyFileTask());
   
   return registry;
 };
