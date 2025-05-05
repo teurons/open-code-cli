@@ -27,8 +27,6 @@ interface RepoGroup {
   files: FetchFile[]
 }
 
-
-
 export class GhFetchTask implements Task {
   /**
    * Execute the GitHub fetch task
@@ -63,7 +61,7 @@ export class GhFetchTask implements Task {
 
       // Replace variables in repo name
       const processedRepo = context.replaceVariables(repo)
-      
+
       // Process this repository
       await this.processRepo(processedRepo, files, cwd)
     }
@@ -101,7 +99,7 @@ export class GhFetchTask implements Task {
       // Process each file in the repository
       for (const file of files) {
         const { source, destination } = file
-        
+
         // Replace variables in paths
         const processedSource = context.replaceVariables(source)
         const processedDestination = context.replaceVariables(destination)

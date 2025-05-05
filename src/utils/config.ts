@@ -43,7 +43,7 @@ export function readOpenRouterConfig(): OpenRouterConfig | null {
     if (!fs.existsSync(OPENROUTER_CONFIG_FILE)) {
       return null
     }
-    
+
     const configData = fs.readFileSync(OPENROUTER_CONFIG_FILE, 'utf-8')
     return JSON.parse(configData) as OpenRouterConfig
   } catch (error) {

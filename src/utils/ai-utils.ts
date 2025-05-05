@@ -78,12 +78,7 @@ export function validateAiMergeConfig(config: Record<string, any>): boolean {
 /**
  * Performs AI-powered code merging
  */
-export async function aiMerge(
-  target: string,
-  source: string,
-  model: string,
-  apiKey?: string
-): Promise<string | null> {
+export async function aiMerge(target: string, source: string, model: string, apiKey?: string): Promise<string | null> {
   if (!target || !source) {
     logger.error('Both target and source content are required')
     return null
@@ -92,7 +87,7 @@ export async function aiMerge(
   try {
     if (!apiKey) {
       throw new Error(
-        'OpenRouter API key is required. Set it in the task config, context, or as OPENROUTER_API_KEY environment variable.'
+        'OpenRouter API key is required. Set it in the task config, context, or as OPENROUTER_API_KEY environment variable.',
       )
     }
 
