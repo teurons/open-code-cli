@@ -54,7 +54,7 @@ export async function handler(argv: ArgumentsCamelCase<ChooseWorkflowArgv>) {
     const tasks = config.workflow.map((task, index) => {
       const taskType = task.task || 'unknown'
       let description = `[${index + 1}] ${taskType}`
-      
+
       // Add more descriptive information based on task type
       if (taskType === 'prompt') {
         description += `: "${task.message || 'User input'}" (name: ${task.name || 'unnamed'})`
@@ -70,7 +70,7 @@ export async function handler(argv: ArgumentsCamelCase<ChooseWorkflowArgv>) {
         if (Array.isArray(task.files)) {
           const fileCount = task.files.length
           const firstFile = task.files[0]?.path || ''
-          description += `: ${firstFile}${fileCount > 1 ? ` (+${fileCount-1} more)` : ''}`
+          description += `: ${firstFile}${fileCount > 1 ? ` (+${fileCount - 1} more)` : ''}`
         }
       } else if (taskType === 'gh_fetch') {
         const repoCount = task.repos?.length || 0
@@ -83,40 +83,40 @@ export async function handler(argv: ArgumentsCamelCase<ChooseWorkflowArgv>) {
         if (Array.isArray(task.files)) {
           const fileCount = task.files.length
           const firstFile = task.files[0]?.path || ''
-          description += `: ${firstFile}${fileCount > 1 ? ` (+${fileCount-1} more)` : ''}`
+          description += `: ${firstFile}${fileCount > 1 ? ` (+${fileCount - 1} more)` : ''}`
         }
       } else if (taskType === 'edit_json') {
         description += `: ${task.file || ''}`
       }
-      
+
       return {
         title: description,
-        value: index
+        value: index,
       }
     })
 
     // Prompt user to select tasks
-    logger.info(`Select tasks to run from ${file} (use spacebar to select multiple, enter to confirm):`);
-    
+    logger.info(`Select tasks to run from ${file} (use spacebar to select multiple, enter to confirm):`)
+
     // Convert our tasks to a format that works with consola prompt
     // Using simple strings as options to avoid type conflicts
-    const options = tasks.map(task => task.title);
-    
+    const options = tasks.map((task) => task.title)
+
     // Use the prompt with simple string options
     const result = await logger.prompt('Choose tasks to run:', {
       type: 'multiselect',
-      options
-    });
-    
+      options,
+    })
+
     // Handle the result safely - result will be array of selected indices
-    const selectedIndices: number[] = [];
-    
+    const selectedIndices: number[] = []
+
     if (Array.isArray(result)) {
       // Get the indices of selected tasks
       for (let i = 0; i < options.length; i++) {
-        const option = options[i];
+        const option = options[i]
         if (option && result.includes(option)) {
-          selectedIndices.push(i);
+          selectedIndices.push(i)
         }
       }
     }
@@ -128,9 +128,7 @@ export async function handler(argv: ArgumentsCamelCase<ChooseWorkflowArgv>) {
 
     // Create a new workflow with only the selected tasks
     const selectedWorkflow: WorkflowConfig = {
-      workflow: selectedIndices
-        .map(index => config.workflow[index])
-        .filter(task => task !== undefined) // Filter out any undefined tasks
+      workflow: selectedIndices.map((index) => config.workflow[index]).filter((task) => task !== undefined), // Filter out any undefined tasks
     }
 
     // Run the selected tasks

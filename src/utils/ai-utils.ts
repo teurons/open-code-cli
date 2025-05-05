@@ -1,6 +1,7 @@
 import { createOpenRouter } from '@openrouter/ai-sdk-provider'
 import { generateText } from 'ai'
 import { logger } from '../logger'
+import { TaskConfig } from '../types/common'
 
 /**
  * Gets the system prompt for AI code merging
@@ -66,7 +67,7 @@ export function extractCodeFromResponse(response: string): string | null {
 /**
  * Validates AI merge configuration
  */
-export function validateAiMergeConfig(config: Record<string, any>): boolean {
+export function validateAiMergeConfig(config: TaskConfig): boolean {
   return (
     typeof config === 'object' &&
     typeof config.targetFile === 'string' &&
@@ -78,12 +79,7 @@ export function validateAiMergeConfig(config: Record<string, any>): boolean {
 /**
  * Performs AI-powered code merging
  */
-export async function aiMerge(
-  target: string,
-  source: string,
-  model: string,
-  apiKey?: string
-): Promise<string | null> {
+export async function aiMerge(target: string, source: string, model: string, apiKey?: string): Promise<string | null> {
   if (!target || !source) {
     logger.error('Both target and source content are required')
     return null
@@ -92,7 +88,7 @@ export async function aiMerge(
   try {
     if (!apiKey) {
       throw new Error(
-        'OpenRouter API key is required. Set it in the task config, context, or as OPENROUTER_API_KEY environment variable.'
+        'OpenRouter API key is required. Set it in the task config, context, or as OPENROUTER_API_KEY environment variable.',
       )
     }
 

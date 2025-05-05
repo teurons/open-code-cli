@@ -47,7 +47,7 @@ export async function handler(argv: ArgumentsCamelCase<PromptArgv>) {
 
   // Handle different prompt types
   let response
-  
+
   if (type === 'select' && options) {
     response = await logger.prompt(message, {
       type: 'select',
@@ -67,6 +67,6 @@ export async function handler(argv: ArgumentsCamelCase<PromptArgv>) {
 
   // Store the response in the context
   context.set(name, typeof response === 'object' ? JSON.stringify(response) : response)
-  
+
   return response
 }

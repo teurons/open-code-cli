@@ -59,5 +59,3 @@ export async function handler(argv: ArgumentsCamelCase<WorkflowArgv>) {
     logger.error(red(`Workflow execution failed: ${(e as Error).message}`))
   }
 }
-
-

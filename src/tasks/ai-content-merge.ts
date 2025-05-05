@@ -1,4 +1,5 @@
 import { Task, TaskContext } from './types'
+import { TaskConfig as CommonTaskConfig } from '../types/common'
 import { logger } from '../logger'
 import { context } from '../context'
 import { existsSync, readFileSync, writeFileSync } from 'fs'
@@ -21,19 +22,14 @@ export class AiContentMergeTask implements Task {
   public async execute(taskContext: TaskContext): Promise<void> {
     const config = taskContext.config as AiContentMergeConfig
     const { cwd } = taskContext
-    const {
-      targetFile,
-      content,
-      model: configModel,
-      apiKey: configApiKey,
-    } = config
-    
+    const { targetFile, content, model: configModel, apiKey: configApiKey } = config
+
     // Get model from config or stored configuration
     const model = configModel || getOpenRouterModel()
 
     // Get API key from config, context, environment variable, or stored configuration
     let apiKey = configApiKey ? context.replaceVariables(configApiKey) : process.env.OPENROUTER_API_KEY || ''
-    
+
     // If API key is not provided in the task or environment, try to get it from the stored configuration
     if (!apiKey) {
       apiKey = getOpenRouterApiKey()
@@ -80,11 +76,7 @@ export class AiContentMergeTask implements Task {
     return aiMerge(target, source, model, apiKey)
   }
 
-  public validate(config: Record<string, any>): boolean {
-    return (
-      typeof config === 'object' &&
-      typeof config.targetFile === 'string' &&
-      typeof config.content === 'string'
-    )
+  public validate(config: CommonTaskConfig): boolean {
+    return typeof config === 'object' && typeof config.targetFile === 'string' && typeof config.content === 'string'
   }
 }

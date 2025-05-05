@@ -5,14 +5,9 @@ import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'fs'
 import { join, dirname } from 'path'
 import { getOpenRouterApiKey, getOpenRouterModel } from '../utils/config'
 import { aiMerge, validateAiMergeConfig } from '../utils/ai-utils'
+import { AiMergeConfig } from '../types/task-types'
 
-interface AiMergeConfig {
-  targetFile: string // Path to the existing file
-  sourceFile: string // Path to the file with new functionality
-  outputFile: string // Path to the output file
-  model?: string // AI model to use
-  apiKey?: string // OpenRouter API key
-}
+// Interface is now imported from '../types/task-types'
 
 /**
  * Task for intelligently merging files using AI to understand functionality
@@ -22,20 +17,14 @@ export class AiMergeFileTask implements Task {
   public async execute(taskContext: TaskContext): Promise<void> {
     const config = taskContext.config as AiMergeConfig
     const { cwd } = taskContext
-    const {
-      targetFile,
-      sourceFile,
-      outputFile,
-      model: configModel,
-      apiKey: configApiKey,
-    } = config
-    
+    const { targetFile, sourceFile, outputFile, model: configModel, apiKey: configApiKey } = config
+
     // Get model from config or stored configuration
     const model = configModel || getOpenRouterModel()
 
     // Get API key from config, context, environment variable, or stored configuration
     let apiKey = configApiKey ? context.replaceVariables(configApiKey) : process.env.OPENROUTER_API_KEY || ''
-    
+
     // If API key is not provided in the task or environment, try to get it from the stored configuration
     if (!apiKey) {
       apiKey = getOpenRouterApiKey()
@@ -107,7 +96,7 @@ export class AiMergeFileTask implements Task {
 
   // These methods have been moved to utils/ai-utils.ts
 
-  public validate(config: Record<string, any>): boolean {
+  public validate(config: AiMergeConfig): boolean {
     return validateAiMergeConfig(config)
   }
 }
