@@ -1,4 +1,5 @@
 import { Task, TaskContext } from './types'
+import { TaskConfig as CommonTaskConfig } from '../types/common'
 import { logger } from '../logger'
 import { context } from '../context'
 import { detect } from '@antfu/ni'
@@ -88,7 +89,7 @@ export class NpmInstallTask implements Task {
     }
   }
 
-  public validate(config: Record<string, any>): boolean {
+  public validate(config: CommonTaskConfig): boolean {
     // Valid if packages is a string, an array, or not provided (for installing all dependencies)
     return (
       typeof config.packages === 'undefined' ||

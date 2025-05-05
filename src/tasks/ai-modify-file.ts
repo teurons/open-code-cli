@@ -1,4 +1,5 @@
 import { Task, TaskContext } from './types'
+import { TaskConfig as CommonTaskConfig } from '../types/common'
 import { logger } from '../logger'
 import { context } from '../context'
 import { existsSync, readFileSync, writeFileSync } from 'fs'
@@ -173,7 +174,7 @@ Return only the complete modified file without any explanations.`
     return null
   }
 
-  public validate(config: Record<string, any>): boolean {
+  public validate(config: CommonTaskConfig): boolean {
     return typeof config === 'object' && typeof config.path === 'string' && typeof config.instruction === 'string'
   }
 }

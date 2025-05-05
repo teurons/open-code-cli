@@ -1,4 +1,5 @@
 import { Task, TaskContext } from './types'
+import { TaskConfig as CommonTaskConfig } from '../types/common'
 import { logger } from '../logger'
 import { context } from '../context'
 import { existsSync, writeFileSync, appendFileSync, mkdirSync } from 'fs'
@@ -82,11 +83,11 @@ export class WriteTask implements Task {
     }
   }
 
-  public validate(config: Record<string, any>): boolean {
+  public validate(config: CommonTaskConfig): boolean {
     return (
       Array.isArray(config.files) &&
       config.files.every(
-        (file: any) =>
+        (file: unknown) =>
           typeof file === 'object' &&
           typeof file.path === 'string' &&
           (typeof file.content === 'string' || typeof file.append === 'string'),

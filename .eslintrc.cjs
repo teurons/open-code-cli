@@ -26,36 +26,36 @@ module.exports = {
     'yarn-error.log*',
     'lerna-debug.log*',
     '.pnpm-debug.log*',
-    
+
     // Diagnostic reports
     'report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json',
-    
+
     // Runtime data
     'pids',
     '*.pid',
     '*.seed',
     '*.pid.lock',
-    
+
     // Coverage
     'lib-cov',
     'coverage',
     '*.lcov',
     '.nyc_output',
-    
+
     // Build tools
     '.grunt',
     'bower_components',
     '.lock-wscript',
     'build/Release',
-    
+
     // Dependencies
     'node_modules/',
     'jspm_packages/',
     'web_modules/',
-    
+
     // TypeScript
     '*.tsbuildinfo',
-    
+
     // Caches
     '.npm',
     '.eslintcache',
@@ -65,18 +65,18 @@ module.exports = {
     '.rts2_cache_es/',
     '.rts2_cache_umd/',
     '.node_repl_history',
-    
+
     // Package files
     '*.tgz',
     '.yarn-integrity',
-    
+
     // Environment
     '.env',
     '.env.development.local',
     '.env.test.local',
     '.env.production.local',
     '.env.local',
-    
+
     // Build caches
     '.cache',
     '.parcel-cache',
@@ -88,14 +88,14 @@ module.exports = {
     '.vuepress/dist',
     '.temp',
     '.docusaurus',
-    
+
     // Serverless
     '.serverless/',
     '.fusebox/',
     '.dynamodb/',
     '.tern-port',
     '.vscode-test',
-    
+
     // Yarn
     '.yarn/cache',
     '.yarn/unplugged',
@@ -103,10 +103,10 @@ module.exports = {
     '.yarn/install-state.gz',
     '.pnp.*',
     '.yarn',
-    
+
     // Custom
     'bundle',
     'dist',
-    'TODO'
-  ]
+    'TODO',
+  ],
 }

@@ -1,4 +1,5 @@
 import { Task, TaskContext } from './types'
+import { TaskConfig as CommonTaskConfig } from '../types/common'
 import { logger } from '../logger'
 import { context } from '../context'
 import { execSync } from 'child_process'
@@ -147,17 +148,17 @@ export class GhFetchTask implements Task {
    * @param config The task configuration to validate
    * @returns True if the configuration is valid, false otherwise
    */
-  public validate(config: Record<string, any>): boolean {
+  public validate(config: CommonTaskConfig): boolean {
     // Configuration is valid if repos is an array of repository groups
     return (
       Array.isArray(config.repos) &&
       config.repos.every(
-        (repoGroup: any) =>
+        (repoGroup: unknown) =>
           typeof repoGroup === 'object' &&
           typeof repoGroup.repo === 'string' &&
           Array.isArray(repoGroup.files) &&
           repoGroup.files.every(
-            (file: any) =>
+            (file: unknown) =>
               typeof file === 'object' && typeof file.source === 'string' && typeof file.destination === 'string',
           ),
       )

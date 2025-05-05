@@ -1,11 +1,13 @@
+import { TaskConfig as CommonTaskConfig } from '../types/common'
+
 export interface Task {
   execute(context: TaskContext): Promise<void>
-  validate(config: Record<string, any>): boolean
+  validate(config: CommonTaskConfig): boolean
 }
 
 export interface TaskContext {
   cwd: string
-  config: Record<string, any>
+  config: CommonTaskConfig
   taskRegistry: TaskRegistry
   updateWorkingDir?: (newDir: string) => void
 }
@@ -17,7 +19,7 @@ export interface TaskRegistry {
 
 export interface TaskConfig {
   task: string
-  [key: string]: any
+  [key: string]: unknown
 }
 
 export interface WorkflowConfig {

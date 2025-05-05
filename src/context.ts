@@ -1,11 +1,12 @@
 import { logger } from './logger'
+import { ConfigValue, ConfigObject } from './types/common'
 
 /**
  * Context manager to store and retrieve user inputs
  */
 export class Context {
   private static instance: Context
-  private store: Record<string, any> = {}
+  private store: ConfigObject = {}
 
   private constructor() {}
 
@@ -22,15 +23,15 @@ export class Context {
   /**
    * Set a value in the context
    */
-  public set(key: string, value: any): void {
+  public set(key: string, value: ConfigValue): void {
     this.store[key] = value
   }
 
   /**
    * Get a value from the context
    */
-  public get(key: string): any {
-    return this.store[key]
+  public get(key: string): unknown {
+    return this.store[key] ?? ''
   }
 
   /**
@@ -43,7 +44,7 @@ export class Context {
   /**
    * Get all values from the context
    */
-  public getAll(): Record<string, any> {
+  public getAll(): ConfigObject {
     return { ...this.store }
   }
 
@@ -54,7 +55,8 @@ export class Context {
   public replaceVariables(text: string): string {
     return text.replace(/\{\{([^}]+)\}\}/g, (_, key) => {
       if (this.has(key.trim())) {
-        return this.get(key.trim())
+        const value = this.get(key.trim())
+        return String(value)
       }
       logger.warn(`Variable {{${key.trim()}}} not found in context`)
       return `{{${key.trim()}}}`

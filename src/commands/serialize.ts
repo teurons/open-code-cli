@@ -69,7 +69,7 @@ export async function handler(argv: ArgumentsCamelCase<SerializeArgv>) {
     }
 
     // Output the serialized content
-    console.log(serialized)
+    logger.info(serialized)
   } catch (error) {
     logger.error(`Failed to serialize file: ${(error as Error).message}`)
     process.exit(1)

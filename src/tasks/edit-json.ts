@@ -1,4 +1,5 @@
 import { Task, TaskContext } from './types'
+import { TaskConfig as CommonTaskConfig } from '../types/common'
 import { logger } from '../logger'
 import { context } from '../context'
 import { existsSync, readFileSync, writeFileSync } from 'fs'
@@ -179,12 +180,12 @@ export class EditJsonTask implements Task {
     this.deleteValue(obj[key] as JsonObject, path.slice(1))
   }
 
-  public validate(config: Record<string, any>): boolean {
+  public validate(config: CommonTaskConfig): boolean {
     return (
       typeof config.file === 'string' &&
       Array.isArray(config.operations) &&
       config.operations.every(
-        (op: any) =>
+        (op: unknown) =>
           typeof op === 'object' &&
           typeof op.type === 'string' &&
           (typeof op.path === 'string' || Array.isArray(op.path)),

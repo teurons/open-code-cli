@@ -1,5 +1,6 @@
 import { spawn, ChildProcess } from 'child_process'
 import { Task, TaskContext } from './types'
+import { TaskConfig as CommonTaskConfig } from '../types/common'
 import { logger } from '../logger'
 import { context } from '../context'
 
@@ -34,7 +35,7 @@ export class ExecuteTask implements Task {
     }
   }
 
-  public validate(config: Record<string, any>): boolean {
+  public validate(config: CommonTaskConfig): boolean {
     return Boolean(config.command || (config.commands && Array.isArray(config.commands)))
   }
 

@@ -1,4 +1,5 @@
 import { Task, TaskContext } from './types'
+import { TaskConfig as CommonTaskConfig } from '../types/common'
 import { logger } from '../logger'
 import { context } from '../context'
 import { detect } from '@antfu/ni'
@@ -64,7 +65,7 @@ export class NpmCommandTask implements Task {
     }
   }
 
-  public validate(config: Record<string, any>): boolean {
+  public validate(config: CommonTaskConfig): boolean {
     return Boolean(config.command || (config.commands && Array.isArray(config.commands)))
   }
 }

@@ -1,4 +1,5 @@
 import { Task, TaskContext } from './types'
+import { TaskConfig as CommonTaskConfig } from '../types/common'
 import { logger } from '../logger'
 import { context } from '../context'
 import { existsSync, readFileSync, writeFileSync } from 'fs'
@@ -88,11 +89,11 @@ export class PatchFileTask implements Task {
     }
   }
 
-  public validate(config: Record<string, any>): boolean {
+  public validate(config: CommonTaskConfig): boolean {
     return (
       typeof config.file === 'string' &&
       Array.isArray(config.operations) &&
-      config.operations.every((op: any) => typeof op === 'object' && typeof op.search === 'string')
+      config.operations.every((op: unknown) => typeof op === 'object' && typeof op.search === 'string')
     )
   }
 }

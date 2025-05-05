@@ -1,4 +1,5 @@
 import { Task, TaskContext } from './types'
+import { TaskConfig as CommonTaskConfig } from '../types/common'
 import { logger } from '../logger'
 import { context } from '../context'
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'fs'
@@ -137,11 +138,12 @@ export class MergeFileTask implements Task {
     return result.join('\\n')
   }
 
-  public validate(config: Record<string, any>): boolean {
+  public validate(config: CommonTaskConfig): boolean {
     return (
       Array.isArray(config.files) &&
       config.files.every(
-        (file: any) => typeof file === 'object' && typeof file.path === 'string' && typeof file.content === 'string',
+        (file: unknown) =>
+          typeof file === 'object' && typeof file.path === 'string' && typeof file.content === 'string',
       )
     )
   }

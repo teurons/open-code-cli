@@ -1,4 +1,5 @@
 import { Task, TaskContext } from './types'
+import { TaskConfig as CommonTaskConfig } from '../types/common'
 import { logger } from '../logger'
 import { context } from '../context'
 
@@ -35,7 +36,7 @@ export class PromptTask implements Task {
     logger.success(`Set ${name} to: ${String(response)}`)
   }
 
-  public validate(config: Record<string, any>): boolean {
+  public validate(config: CommonTaskConfig): boolean {
     return Boolean(config.name && config.message)
   }
 }

@@ -5,14 +5,9 @@ import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'fs'
 import { join, dirname } from 'path'
 import { getOpenRouterApiKey, getOpenRouterModel } from '../utils/config'
 import { aiMerge, validateAiMergeConfig } from '../utils/ai-utils'
+import { AiMergeConfig } from '../types/task-types'
 
-interface AiMergeConfig {
-  targetFile: string // Path to the existing file
-  sourceFile: string // Path to the file with new functionality
-  outputFile: string // Path to the output file
-  model?: string // AI model to use
-  apiKey?: string // OpenRouter API key
-}
+// Interface is now imported from '../types/task-types'
 
 /**
  * Task for intelligently merging files using AI to understand functionality
@@ -101,7 +96,7 @@ export class AiMergeFileTask implements Task {
 
   // These methods have been moved to utils/ai-utils.ts
 
-  public validate(config: Record<string, any>): boolean {
+  public validate(config: AiMergeConfig): boolean {
     return validateAiMergeConfig(config)
   }
 }
