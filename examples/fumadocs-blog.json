@@ -52,36 +52,36 @@
     },
     {
       "task": "gh_fetch",
-      "items": [
+      "repos": [
         {
           "repo": "fuma-nama/fumadocs",
-          "source": "examples/next-mdx/mdx-components.tsx",
-          "destination": "mdx-components.tsx",
-          "type": "file"
-        },
-        {
-          "repo": "fuma-nama/fumadocs",
-          "source": "examples/next-mdx/next.config.mjs",
-          "destination": "next.config.mjs",
-          "type": "file"
-        },
-        {
-          "repo": "rjvim/rjvim.github.io",
-          "source": "packages/fumadocs-blog/src",
-          "destination": "fumadocs-blog",
-          "type": "directory"
+          "files": [
+            {
+              "source": "examples/next-mdx/mdx-components.tsx",
+              "destination": "mdx-components.tsx"
+            },
+            {
+              "source": "examples/next-mdx/next.config.mjs",
+              "destination": "next.config.mjs"
+            }
+          ]
         },
         {
           "repo": "rjvim/rjvim.github.io",
-          "source": "apps/web/app/(home)/blog",
-          "destination": "app/(home)/blog",
-          "type": "directory"
-        },
-        {
-          "repo": "rjvim/rjvim.github.io",
-          "source": "apps/web/app/blog-og",
-          "destination": "app/blog-og",
-          "type": "directory"
+          "files": [
+            {
+              "source": "packages/fumadocs-blog/src",
+              "destination": "fumadocs-blog"
+            },
+            {
+              "source": "apps/web/app/(home)/blog",
+              "destination": "app/(home)/blog"
+            },
+            {
+              "source": "apps/web/app/blog-og",
+              "destination": "app/blog-og"
+            }
+          ]
         }
       ]
     },

@@ -8,6 +8,10 @@
 rm -rf my-blog && ./../open-code-cli/bin/run workflow ../open-code-cli/examples/fumadocs-blog.json
 ```
 
+```
+rm -rf docs-blog && ./../open-code-cli/bin/run workflow ../open-code-cli/examples/fumadocs-and-blog.json
+```
+
 ---
 
 rjvim blog workflow
