@@ -46,7 +46,6 @@ export {
   NpmCommandTask,
   NpmInstallTask,
   GhFetchTask,
-  EditJsonTask,
   AiMergeFileTask,
   context,
 }

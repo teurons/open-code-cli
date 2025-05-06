@@ -1,27 +1,15 @@
-# CLI TypeScript Starter
+# Open Code CLI
 
-An all-inclusive starter kit for crafting command-line interfaces (CLI) using TypeScript, driven by Node.js. This kit is
-meticulously designed to kick-start your development journey with a solid foundation, encompassing features such as
-argument parsing, environment setup, logging, testing suites, as well as code formatting and linting capabilities.
+A powerful task-based workflow automation CLI built with TypeScript. This tool enables developers to define and execute complex workflows through JSON configuration files, automating repetitive development tasks and streamlining project setup processes.
 
 ## Features
 
-This template incorporates several key tools and libraries to enhance your CLI development experience:
-
-- **[Yargs](https://github.com/yargs/yargs):** A powerful library for parsing command-line arguments.
-- **[Dotenv](https://github.com/motdotla/dotenv):** Loads environment variables from a `.env` file into `process.env`,
-  making it easy to manage application configuration.
-- **[PicoColors](https://github.com/alexeyraspopov/picocolors):** Lightweight and fast library for styling terminal
-  text.
-- **[Consola](https://github.com/unjs/consola):** 🐨Elegant Console Logger for Node.js and Browser
-- **[Jest](https://jestjs.io/):** A delightful JavaScript Testing Framework with a focus on simplicity.
-- **[TS-Node](https://typestrong.org/ts-node/):** TypeScript execution and REPL for Node.js.
-- **[TSUP](https://tsup.egoist.dev/):** The simplest and fastest way to bundle your TypeScript libraries.
-- **[Prettier](https://prettier.io/):** An opinionated code formatter that supports many languages and integrates with
-  most editors.
-- **[ESLint](https://eslint.org/):** A pluggable and configurable linter tool for identifying and reporting on patterns
-  in JavaScript and TypeScript.
-- **[giget](https://github.com/unjs/giget)** ✨ Download templates and git repositories with pleasure!
+- **Task-based Workflow System:** Define complex sequences of operations as JSON workflow files
+- **Variable Context Management:** Share data between tasks using a context system with variable replacement
+- **Package Manager Integration:** Automatic detection of npm, yarn, or pnpm with appropriate command execution
+- **AI-powered Code Operations:** Merge, modify, and generate code using AI capabilities
+- **Directory Context Tracking:** Maintain proper working directory context across task execution
+- **Interactive User Prompts:** Collect user input during workflow execution
 
 ## Prerequisites
 
@@ -76,28 +64,202 @@ Update the `package.json` to reflect your project's details:
 
 Create a `.env` file in the root directory and configure your environment variables as needed.
 
-## Usage
+## Workflow Command
 
-This starter comes equipped with several predefined scripts to facilitate development, alongside sample commands to
-demonstrate the capabilities of the CLI application.
+The `workflow` command is the core functionality of Open Code CLI, allowing you to define and execute sequences of tasks from a JSON configuration file.
 
-### Running Commands
+### Usage
 
-- In development mode, use `pnpm start [command name]` to run any command. This utilizes `ts-node` for a seamless
-  development experience.
-- In production, execute the CLI application directly with `my-project [command name]` to run the desired
-  command from the built project (the name of command should be provided in `package.json` in `bin`).
+```bash
+open-code-cli workflow <file>
+# or using the alias
+open-code-cli w <file>
+```
 
-### Sample Commands
+Where `<file>` is the path to a JSON workflow configuration file.
 
-- **`info`**: Prints information about the current system and Node.js configuration. This command is useful for
-  verifying the environment in which the CLI is running.
-- **`greeting`**: Demonstrates interactive prompts within the CLI. It's a great way to see how user inputs can be
-  handled in a friendly manner.
-- **`create`**: Create new project based on `cli-typescript-starter`.
+### Workflow Structure
 
-All commands are located in the `src/commands/` folder. This organization makes it easy to find and modify commands or
-add new ones as needed.
+A workflow file is a JSON file with the following structure:
+
+```json
+{
+  "workflow": [
+    {
+      "task": "task_type"
+      // task-specific configuration
+    }
+    // more tasks...
+  ]
+}
+```
+
+Each task in the workflow array has a `task` property that identifies the type of task to execute, along with task-specific configuration properties.
+
+### Variable Replacement
+
+Workflows support variable replacement using the `{{variable}}` syntax. Variables can be defined by prompt tasks and referenced in subsequent tasks:
+
+```json
+{
+  "task": "execute",
+  "command": "mkdir {{project_name}}",
+  "depends": ["project_name"]
+}
+```
+
+The `depends` array specifies which variables must be defined before the task can execute.
+
+### Task Types
+
+The workflow system supports the following task types:
+
+#### `prompt`
+
+Collects user input and stores it in the context system for use by other tasks.
+
+```json
+{
+  "task": "prompt",
+  "name": "project_name",
+  "message": "Enter your project name",
+  "type": "input",
+  "default": "my-project"
+}
+```
+
+Supported prompt types:
+
+- `input`: Text input (default)
+- `select`: Selection from options list
+- `confirm`: Yes/No confirmation
+
+#### `execute`
+
+Executes shell commands with variable replacement.
+
+```json
+{
+  "task": "execute",
+  "command": "mkdir -p {{directory}}",
+  "depends": ["directory"]
+}
+```
+
+Alternatively, you can specify multiple commands:
+
+```json
+{
+  "task": "execute",
+  "commands": ["mkdir -p src", "touch src/index.ts"]
+}
+```
+
+#### `npm_cmd`
+
+Executes package manager commands with automatic detection of npm, yarn, or pnpm.
+
+```json
+{
+  "task": "npm_cmd",
+  "command": "install react react-dom",
+  "package_manager": "auto"
+}
+```
+
+The `package_manager` can be `auto`, `npm`, `yarn`, or `pnpm`.
+
+#### `npm_install`
+
+Installs packages using the detected package manager.
+
+```json
+{
+  "task": "npm_install",
+  "packages": ["react", "react-dom"],
+  "dev": false,
+  "package_manager": "auto"
+}
+```
+
+Set `dev: true` to install as dev dependencies.
+
+#### `npm_execute`
+
+Runs a script from package.json using the detected package manager.
+
+```json
+{
+  "task": "npm_execute",
+  "script": "build",
+  "package_manager": "auto"
+}
+```
+
+#### `gh_fetch`
+
+Fetches files or directories from GitHub repositories.
+
+```json
+{
+  "task": "gh_fetch",
+  "repo": "owner/repo",
+  "path": "path/to/file.ts",
+  "output": "./local/path/file.ts",
+  "branch": "main"
+}
+```
+
+#### `write`
+
+Writes content to a file with variable replacement.
+
+```json
+{
+  "task": "write",
+  "file": "README.md",
+  "content": "# {{project_name}}\n\nCreated with Open Code CLI"
+}
+```
+
+#### `ai_merge_file`
+
+Merges two files using AI capabilities.
+
+```json
+{
+  "task": "ai_merge_file",
+  "targetFile": "./target.ts",
+  "sourceFile": "./source.ts",
+  "outputFile": "./output.ts"
+}
+```
+
+#### `ai_content_merge`
+
+Merges content strings using AI.
+
+```json
+{
+  "task": "ai_content_merge",
+  "targetContent": "...",
+  "sourceContent": "...",
+  "outputFile": "./output.ts"
+}
+```
+
+#### `ai_modify_file`
+
+Modifies a file using AI with specific instructions.
+
+```json
+{
+  "task": "ai_modify_file",
+  "file": "./target.ts",
+  "instructions": "Add TypeScript types to all functions",
+  "outputFile": "./modified.ts"
+}
+```
 
 ### Script Commands
 
@@ -118,77 +280,90 @@ This starter comes with several predefined scripts to help with development:
 - `pnpm test` - Run unit tests.
 - `pnpm test:watch` - Run tests and watch for file changes.
 
-## CI/CD and Automation
+### Example Workflow
 
-### Automated Version Management and NPM Publishing with Semantic-Release
+Here's an example workflow that sets up a Next.js project with Shadcn UI components:
 
-This project utilizes `semantic-release` to automate version management and the NPM publishing
-process. `Semantic-release` automates the workflow of releasing new versions, including the generation of detailed
-release notes based on commit messages that follow the conventional commit format.
+```json
+{
+  "workflow": [
+    {
+      "task": "prompt",
+      "name": "app_name",
+      "message": "Enter the name of your app",
+      "type": "input",
+      "default": "my-app"
+    },
+    {
+      "task": "npm_cmd",
+      "command": "create next-app@latest {{app_name}} --typescript --tailwind --eslint --yes",
+      "package_manager": "auto"
+    },
+    {
+      "task": "execute",
+      "command": "cd {{app_name}}",
+      "depends": ["app_name"]
+    },
+    {
+      "task": "npm_cmd",
+      "commands": ["shadcn@latest init", "shadcn@latest add button"],
+      "package_manager": "auto"
+    },
+    {
+      "task": "execute",
+      "command": "pnpm dev",
+      "package_manager": "auto"
+    }
+  ]
+}
+```
 
-The publishing process is triggered automatically when changes are merged into the main branch. Here's how it works:
+This workflow:
 
-1. **Automated Versioning:** Based on the commit messages, `semantic-release` determines the type of version change (
-   major, minor, or patch) and updates the version accordingly.
-2. **Release Notes:** It then generates comprehensive release notes detailing new features, bug fixes, and any breaking
-   changes, enhancing clarity and communication with users.
-3. **NPM Publishing:** Finally, `semantic-release` publishes the new version to the NPM registry and creates a GitHub
-   release with the generated notes.
+1. Prompts for an application name
+2. Creates a new Next.js project with that name
+3. Changes directory to the new project
+4. Initializes Shadcn UI and adds a button component
+5. Starts the development server
 
-To ensure a smooth `semantic-release` process:
+## OpenRouter Integration
 
-- Merge feature or fix branches into the main branch following thorough review and testing.
-- Use conventional commit messages to help `semantic-release` accurately determine version changes and generate
-  meaningful release notes.
-- Configure an NPM access token as a GitHub secret under the name `NPM_TOKEN` for authentication during the publication
-  process.
+The AI-powered tasks require an OpenRouter API key. You can configure this using the `init-open-router` command:
 
-By integrating `semantic-release`, this project streamlines its release process, ensuring that versions are managed
-efficiently and that users are well-informed of each update through automatically generated release notes.
+```bash
+open-code-cli init-open-router
+```
 
-## Development
+This will prompt you for your API key and preferred model, storing the configuration in `~/.open-code-cli/openrouter.json`.
 
-To contribute to this project or customize it for your needs, consider the following guidelines:
+## Creating Custom Tasks
 
-1. **Code Styling:** Follow the predefined code style, using Prettier for formatting and ESLint for linting, to ensure
-   consistency.
-2. **Commit Messages:** We use `commitizen` and `commitlint` to ensure our commit messages are consistent and follow the
-   conventional commit format, recommended by `@commitlint/config-conventional`. To make a commit, you can
-   run `pnpm commit`, which will guide you through creating a conventional commit message.
-3. **Testing:** Write unit tests for new features or bug fixes using Jest. Make sure to run tests before pushing any
-   changes.
-4. **Environment Variables:** Use the `.env` file for local development. For production, ensure you configure the
-   environment variables in your deployment environment.
-5. **Husky Git Hooks:** This project utilizes Husky to automate linting, formatting, and commit message verification via
-   git hooks. This ensures that code commits meet our quality and style standards without manual checks. The hooks set
-   up include pre-commit hooks for running ESLint and Prettier, and commit-msg hooks for validating commit messages
-   with `commitlint`.
+You can extend the workflow system by creating custom task implementations:
 
-## Contributing
+1. Create a new task class that implements the `Task` interface
+2. Register your task with the task registry
 
-Contributions are welcome! If you'd like to improve this CLI TypeScript starter, please follow the standard
-fork-and-pull request workflow. Here are a few guidelines to keep in mind:
+```typescript
+export class MyCustomTask implements Task {
+  public async execute(taskContext: TaskContext): Promise<void> {
+    // Implementation here
+  }
 
-- Make sure your code adheres to the project's coding standards, including using Prettier for code formatting and ESLint
-  for linting.
-- Follow the conventional commit format for your commit messages. This project uses `commitizen` and `commitlint` with
-  the `@commitlint/config-conventional` configuration, enforced by Husky git hooks.
-- Include tests for new features or bug fixes when applicable.
-- Ensure your changes are properly formatted and linted before submitting a pull request.
+  public validate(config: CommonTaskConfig): boolean {
+    // Validation logic here
+    return true
+  }
+}
 
-By adhering to these guidelines, you help maintain the quality and consistency of the project, making it easier for
-others to contribute and for users to understand and utilize the project effectively.
+// Register the task
+const registry = createTaskRegistry()
+registry.registerTask('my_custom_task', new MyCustomTask())
+```
 
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](./LICENSE) file for details.
 
-## Author
-
-**Andrey Kucherenko**
-
-- GitHub: [@kucherenko](https://github.com/kucherenko)
-
 ---
 
-Happy Coding!
+Happy Automating!
