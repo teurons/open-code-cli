@@ -120,3 +120,5 @@ TODO
 blog/
 my-blog/
 temp/
+.open-code-cli.tracker.json
+examples/locospec-laravel

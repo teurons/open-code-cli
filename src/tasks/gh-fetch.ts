@@ -7,6 +7,7 @@ import { existsSync, mkdirSync, copyFileSync, cpSync, statSync } from 'fs'
 import { dirname, join } from 'path'
 import { tmpdir } from 'os'
 import { randomUUID } from 'crypto'
+import { needsSync, updateRepoSyncData } from '../utils/tracker'
 
 /**
  * Represents a file or directory to be fetched from a GitHub repository
@@ -26,6 +27,10 @@ interface RepoGroup {
   repo: string
   /** List of files/directories to fetch from this repository */
   files: FetchFile[]
+  /** Whether to sync this repository (track commits and only fetch if there are changes) */
+  sync?: boolean
+  /** Branch to fetch from (defaults to main) */
+  branch?: string
 }
 
 export class GhFetchTask implements Task {
@@ -53,7 +58,7 @@ export class GhFetchTask implements Task {
 
     // Process each repository group directly
     for (const repoGroup of repos) {
-      const { repo, files } = repoGroup as RepoGroup
+      const { repo, files, sync = false, branch = 'main' } = repoGroup as RepoGroup
 
       // Validate repository group structure
       if (!repo || !files || !Array.isArray(files)) {
@@ -64,7 +69,7 @@ export class GhFetchTask implements Task {
       const processedRepo = context.replaceVariables(repo)
 
       // Process this repository
-      await this.processRepo(processedRepo, files, cwd)
+      await this.processRepo(processedRepo, files, cwd, sync, branch)
     }
   }
 
@@ -85,8 +90,38 @@ export class GhFetchTask implements Task {
    * @param repo The repository name (owner/repo)
    * @param files The files to extract from the repository
    * @param cwd The current working directory
+   * @param sync Whether to sync this repository (track commits and only fetch if there are changes)
+   * @param branch Branch to fetch from
    */
-  private async processRepo(repo: string, files: FetchFile[], cwd: string): Promise<void> {
+  private async processRepo(repo: string, files: FetchFile[], cwd: string, sync = false, branch = 'main'): Promise<void> {
+    // Check if we need to sync by getting the latest commit hash
+    let shouldFetch = true
+    let latestCommitHash = ''
+    
+    if (sync) {
+      try {
+        // Get the latest commit hash from the repository
+        logger.info(`Checking for updates in repository ${repo} (branch: ${branch})`)
+        latestCommitHash = execSync(`git ls-remote https://github.com/${repo}.git ${branch} | cut -f1`)
+          .toString()
+          .trim()
+        
+        // Check if we need to sync
+        shouldFetch = needsSync(cwd, repo, branch, latestCommitHash)
+        
+        if (!shouldFetch) {
+          logger.info(`Repository ${repo} is already up to date, skipping fetch`)
+          return
+        }
+        
+        logger.info(`Updates found in repository ${repo}, proceeding with fetch`)
+      } catch (e) {
+        logger.warn(`Failed to check for updates in repository ${repo}: ${(e as Error).message}`)
+        // If we fail to check for updates, we'll fetch anyway
+        shouldFetch = true
+      }
+    }
+    
     // Create a temporary directory for the repository
     const tempDir = join(tmpdir(), `gh-fetch-${randomUUID()}`)
     mkdirSync(tempDir, { recursive: true })
@@ -94,7 +129,7 @@ export class GhFetchTask implements Task {
     try {
       // Download the entire repository once
       logger.info(`Downloading repository ${repo} to temporary directory`)
-      const gigetCommand = `npx giget gh:${repo} ${this.escapeShellArg(tempDir)} --force`
+      const gigetCommand = `npx giget gh:${repo}#${branch} ${this.escapeShellArg(tempDir)} --force`
       execSync(gigetCommand, { stdio: 'inherit', cwd: process.cwd() })
 
       // Process each file in the repository
@@ -140,6 +175,12 @@ export class GhFetchTask implements Task {
       } catch (e) {
         logger.warn(`Failed to clean up temporary directory: ${(e as Error).message}`)
       }
+      
+      // Update sync data if sync is enabled and we have a commit hash
+      if (sync && latestCommitHash) {
+        updateRepoSyncData(cwd, repo, branch, latestCommitHash)
+        logger.info(`Updated sync data for repository ${repo}`)
+      }
     }
   }
 
@@ -153,15 +194,35 @@ export class GhFetchTask implements Task {
     return (
       Array.isArray(config.repos) &&
       config.repos.every(
-        (repoGroup: unknown) =>
-          typeof repoGroup === 'object' &&
-          typeof repoGroup.repo === 'string' &&
-          Array.isArray(repoGroup.files) &&
-          repoGroup.files.every(
+        (repoGroup: unknown) => {
+          if (typeof repoGroup !== 'object' || repoGroup === null) return false;
+          
+          const typedRepo = repoGroup as Record<string, unknown>;
+          
+          // Required fields
+          if (typeof typedRepo.repo !== 'string' || !Array.isArray(typedRepo.files)) {
+            return false;
+          }
+          
+          // Optional fields
+          if (typedRepo.sync !== undefined && typeof typedRepo.sync !== 'boolean') {
+            return false;
+          }
+          
+          if (typedRepo.branch !== undefined && typeof typedRepo.branch !== 'string') {
+            return false;
+          }
+          
+          // Validate files
+          return typedRepo.files.every(
             (file: unknown) =>
-              typeof file === 'object' && typeof file.source === 'string' && typeof file.destination === 'string',
-          ),
+              typeof file === 'object' && 
+              file !== null &&
+              typeof (file as Record<string, unknown>).source === 'string' && 
+              typeof (file as Record<string, unknown>).destination === 'string',
+          );
+        }
       )
-    )
+    );
   }
 }

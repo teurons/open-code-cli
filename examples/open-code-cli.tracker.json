@@ -1,0 +1,10 @@
+{
+  "repos": {
+    "locospec/locospec-laravel": {
+      "repo": "locospec/locospec-laravel",
+      "branch": "main",
+      "lastCommitHash": "454c496b0287be33b1943d75914f5959ca533b2b",
+      "lastSyncedAt": "2025-05-08T11:39:18.840Z"
+    }
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "workflow": [
+    {
+      "task": "gh_fetch",
+      "repos": [
+        {
+          "repo": "locospec/locospec-laravel",
+          "sync": true,
+          "branch": "main",
+          "files": [
+            {
+              "source": "/",
+              "destination": "locospec-laravel"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
