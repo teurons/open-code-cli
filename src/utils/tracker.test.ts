@@ -101,7 +101,7 @@ describe('Tracker Utils', () => {
       const mockConfig = { repos: {} }
       
       // Mock readTrackerConfig to return empty config
-      jest.spyOn(global, 'readTrackerConfig').mockReturnValue(mockConfig)
+      jest.spyOn(require('./tracker'), 'readTrackerConfig').mockReturnValue(mockConfig)
       
       // Mock Date.toISOString
       const mockDate = new Date('2023-01-01')
@@ -120,7 +120,7 @@ describe('Tracker Utils', () => {
   
   describe('getLastSyncedCommit', () => {
     it('should return null if repo not found', () => {
-      jest.spyOn(global, 'readTrackerConfig').mockReturnValue({ repos: {} })
+      jest.spyOn(require('./tracker'), 'readTrackerConfig').mockReturnValue({ repos: {} })
       
       const result = getLastSyncedCommit(mockDir, mockRepo, mockBranch)
       
@@ -128,7 +128,7 @@ describe('Tracker Utils', () => {
     })
     
     it('should return null if branch does not match', () => {
-      jest.spyOn(global, 'readTrackerConfig').mockReturnValue({ 
+      jest.spyOn(require('./tracker'), 'readTrackerConfig').mockReturnValue({ 
         repos: { 
           [mockRepo]: { 
             repo: mockRepo, 
@@ -145,7 +145,7 @@ describe('Tracker Utils', () => {
     })
     
     it('should return commit hash if repo and branch match', () => {
-      jest.spyOn(global, 'readTrackerConfig').mockReturnValue({ 
+      jest.spyOn(require('./tracker'), 'readTrackerConfig').mockReturnValue({ 
         repos: { 
           [mockRepo]: { 
             repo: mockRepo, 
@@ -164,7 +164,7 @@ describe('Tracker Utils', () => {
   
   describe('needsSync', () => {
     it('should return true if repo never synced', () => {
-      jest.spyOn(global, 'getLastSyncedCommit').mockReturnValue(null)
+      jest.spyOn(require('./tracker'), 'getLastSyncedCommit').mockReturnValue(null)
       
       const result = needsSync(mockDir, mockRepo, mockBranch, mockCommitHash)
       
@@ -172,7 +172,7 @@ describe('Tracker Utils', () => {
     })
     
     it('should return true if commit hash is different', () => {
-      jest.spyOn(global, 'getLastSyncedCommit').mockReturnValue('different-hash')
+      jest.spyOn(require('./tracker'), 'getLastSyncedCommit').mockReturnValue('different-hash')
       
       const result = needsSync(mockDir, mockRepo, mockBranch, mockCommitHash)
       
@@ -180,7 +180,7 @@ describe('Tracker Utils', () => {
     })
     
     it('should return false if commit hash is the same', () => {
-      jest.spyOn(global, 'getLastSyncedCommit').mockReturnValue(mockCommitHash)
+      jest.spyOn(require('./tracker'), 'getLastSyncedCommit').mockReturnValue(mockCommitHash)
       
       const result = needsSync(mockDir, mockRepo, mockBranch, mockCommitHash)
       
