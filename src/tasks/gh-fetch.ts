@@ -2,20 +2,19 @@ import { Task, TaskContext } from './types'
 import { TaskConfig as CommonTaskConfig } from '../types/common'
 import { logger } from '../logger'
 import { context } from '../context'
-// execSync is now used from utility functions
-import { existsSync, mkdirSync, cpSync, statSync, readdirSync, copyFileSync } from 'fs'
+import { existsSync, mkdirSync, statSync, readdirSync } from 'fs'
 import { dirname, join, normalize, relative } from 'path'
 import { needsSync, updateRepoSyncData } from '../utils/tracker'
-import { 
-  validateDependencies, 
-  validateReposConfiguration, 
-  validateRepositoryGroup, 
-  hasFileChanged, 
+import {
+  validateDependencies,
+  validateReposConfiguration,
+  validateRepositoryGroup,
+  hasFileChanged,
   validateGhFetchConfig,
   getLatestCommitHash,
   downloadRepository,
   FileCopyOperation,
-  executeCopyOperations
+  executeCopyOperations,
 } from '../utils/gh-fetch-utils'
 
 /**
@@ -54,7 +53,7 @@ export class GhFetchTask implements Task {
     // Check dependencies and validate repos configuration
     validateDependencies(depends)
     validateReposConfiguration(repos as unknown[])
-    
+
     const typedRepos = repos as unknown[]
 
     // Process each repository group directly
@@ -72,27 +71,15 @@ export class GhFetchTask implements Task {
     }
   }
 
-    // Using imported escapeShellArg function directly
-
-  // We're using the imported utility functions directly
-
-  /**
-   * Check if a file has changed by comparing hashes
-   * @param sourcePath Source file path
-   * @param destPath Destination file path
-   * @returns True if the file has changed or destination doesn't exist
-   */
-  private hasFileChanged(sourcePath: string, destPath: string): boolean {
-    return hasFileChanged(sourcePath, destPath)
-  }
+  // Using imported utility functions directly
 
   /**
    * Sync directory changes by comparing files and only copying changed ones
    * @param sourceDir Source directory path
    * @param destDir Destination directory path
-   * @param copyOps Optional array to collect copy operations
+   * @param copyOps Array to collect copy operations
    */
-  private syncDirectoryChanges(sourceDir: string, destDir: string, copyOps?: FileCopyOperation[]): void {
+  private syncDirectoryChanges(sourceDir: string, destDir: string, copyOps: FileCopyOperation[]): void {
     // Create destination directory if it doesn't exist
     if (!existsSync(destDir)) {
       mkdirSync(destDir, { recursive: true })
@@ -109,33 +96,27 @@ export class GhFetchTask implements Task {
 
         if (entry.isDirectory()) {
           // Recursively sync subdirectory
-          this.syncDirectoryChanges(sourcePath, destPath)
+          this.syncDirectoryChanges(sourcePath, destPath, copyOps)
         } else {
-          // Copy file only if it has changed
-          if (this.hasFileChanged(sourcePath, destPath)) {
+          // Only add to copy operations if file has changed
+          if (hasFileChanged(sourcePath, destPath)) {
             const relPath = relative(sourceDir, sourcePath)
             logger.info(`File changed: ${relPath}`)
-            
-            if (copyOps) {
-              // Add to copy operations collection if provided
-              copyOps.push({
-                sourcePath,
-                destPath,
-                displaySource: relPath,
-                processedDestination: destPath,
-                repo: ''
-              })
-            } else {
-              // Directly copy if no collection provided
-              copyFileSync(sourcePath, destPath)
-            }
+
+            // Add to copy operations collection
+            copyOps.push({
+              sourcePath,
+              destPath,
+              displaySource: relPath,
+              processedDestination: destPath,
+              repo: '',
+            })
           }
         }
       }
     } catch (e) {
       logger.warn(`Error syncing directory ${sourceDir}: ${(e as Error).message}`)
-      // Fall back to full directory copy on error
-      cpSync(sourceDir, destDir, { recursive: true })
+      // Log error but don't attempt to recover
     }
   }
 
@@ -185,10 +166,9 @@ export class GhFetchTask implements Task {
     const { tempDir, cleanup } = downloadRepository(repo, branch)
 
     try {
-
       // Collect file copy operations
       const copyOperations: FileCopyOperation[] = []
-      
+
       // Process each file in the repository
       for (const file of files) {
         const { source, destination } = file
@@ -215,14 +195,14 @@ export class GhFetchTask implements Task {
           if (stats.isDirectory()) {
             // Remove any leading slashes for display
             const displaySource = normalizedSource === '' ? '/' : normalizedSource
-            logger.info(`Processing directory from ${repo}:${displaySource} to ${processedDestination}`)
+            logger.info(`Processing directory from ${repo}${displaySource} to ${processedDestination}`)
 
             // Copy directory with intelligent change detection
             this.syncDirectoryChanges(sourcePath, destPath, copyOperations)
           } else {
             // Remove any leading slashes for display
             const displaySource = normalizedSource === '' ? '/' : normalizedSource
-            logger.info(`Processing file from ${repo}:${displaySource} to ${processedDestination}`)
+            logger.info(`Processing file from ${repo}${displaySource} to ${processedDestination}`)
 
             // Add to copy operations instead of copying immediately
             copyOperations.push({
@@ -230,14 +210,14 @@ export class GhFetchTask implements Task {
               destPath,
               displaySource,
               processedDestination,
-              repo
+              repo,
             })
           }
         } catch (e) {
           throw new Error(`Failed to process from ${repo}/${normalizedSource}: ${(e as Error).message}`)
         }
       }
-      
+
       // Execute all file copy operations in batch
       executeCopyOperations(copyOperations)
     } finally {
