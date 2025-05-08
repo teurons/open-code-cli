@@ -134,9 +134,9 @@ export function downloadRepository(repo: string, branch: string): { tempDir: str
 }
 
 /**
- * Represents a file copy operation
+ * Represents a file sync operation
  */
-export interface FileCopyOperation {
+export interface FileSyncOperation {
   sourcePath: string;
   destPath: string;
   displaySource: string;
@@ -145,18 +145,18 @@ export interface FileCopyOperation {
 }
 
 /**
- * Executes a batch of file copy operations
- * @param operations Array of file copy operations
+ * Executes a batch of file sync operations
+ * @param operations Array of file sync operations
  */
-export function executeCopyOperations(operations: FileCopyOperation[]): void {
+export function executeSyncOperations(operations: FileSyncOperation[]): void {
   for (const op of operations) {
     if (hasFileChanged(op.sourcePath, op.destPath)) {
       logger.info(`File has changed, copying: ${op.processedDestination}`)
       copyFileSync(op.sourcePath, op.destPath)
+      logger.success(`Successfully fetched to ${op.processedDestination}`)
     } else {
       logger.info(`File unchanged, skipping: ${op.processedDestination}`)
     }
-    logger.success(`Successfully fetched to ${op.processedDestination}`)
   }
 }
 
