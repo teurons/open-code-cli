@@ -2,13 +2,21 @@ import { Task, TaskContext } from './types'
 import { TaskConfig as CommonTaskConfig } from '../types/common'
 import { logger } from '../logger'
 import { context } from '../context'
-import { execSync } from 'child_process'
-import { existsSync, mkdirSync, copyFileSync, cpSync, statSync, readFileSync, readdirSync } from 'fs'
+// execSync is now used from utility functions
+import { existsSync, mkdirSync, cpSync, statSync, readdirSync, copyFileSync } from 'fs'
 import { dirname, join, normalize, relative } from 'path'
-import { tmpdir } from 'os'
-import { randomUUID } from 'crypto'
-import { createHash } from 'crypto'
 import { needsSync, updateRepoSyncData } from '../utils/tracker'
+import { 
+  validateDependencies, 
+  validateReposConfiguration, 
+  validateRepositoryGroup, 
+  hasFileChanged, 
+  validateGhFetchConfig,
+  getLatestCommitHash,
+  downloadRepository,
+  FileCopyOperation,
+  executeCopyOperations
+} from '../utils/gh-fetch-utils'
 
 /**
  * Represents a file or directory to be fetched from a GitHub repository
@@ -43,28 +51,18 @@ export class GhFetchTask implements Task {
     const { repos, depends } = taskContext.config
     const { cwd } = taskContext
 
-    // Check dependencies
-    if (depends && Array.isArray(depends)) {
-      for (const dep of depends) {
-        if (!context.has(dep)) {
-          throw new Error(`Missing dependency: ${dep}`)
-        }
-      }
-    }
-
-    // Validate repos configuration
-    if (!repos || !Array.isArray(repos) || repos.length === 0) {
-      throw new Error('No repositories provided. The repos field must be an array of repository groups.')
-    }
+    // Check dependencies and validate repos configuration
+    validateDependencies(depends)
+    validateReposConfiguration(repos as unknown[])
+    
+    const typedRepos = repos as unknown[]
 
     // Process each repository group directly
-    for (const repoGroup of repos) {
+    for (const repoGroup of typedRepos) {
       const { repo, files, sync = false, branch = 'main' } = repoGroup as RepoGroup
 
       // Validate repository group structure
-      if (!repo || !files || !Array.isArray(files)) {
-        throw new Error('Invalid repository group: repo and files array are required')
-      }
+      validateRepositoryGroup(repo, files)
 
       // Replace variables in repo name
       const processedRepo = context.replaceVariables(repo)
@@ -74,36 +72,9 @@ export class GhFetchTask implements Task {
     }
   }
 
-  /**
-   * Escapes a string for safe use as a shell argument
-   * Handles special characters like parentheses, spaces, etc.
-   * @param arg The string to escape
-   * @returns The escaped string
-   */
-  private escapeShellArg(arg: string): string {
-    // For paths with special characters, we need to escape them properly
-    // This handles parentheses, spaces, and other special shell characters
-    return `"${arg.replace(/"/g, '\"')}"` // Fix double slash issue
-  }
+    // Using imported escapeShellArg function directly
 
-  /**
-   * Calculate hash of a file for comparison
-   * @param filePath Path to the file
-   * @returns MD5 hash of the file contents
-   */
-  private getFileHash(filePath: string): string {
-    if (!existsSync(filePath)) {
-      return ''
-    }
-
-    try {
-      const content = readFileSync(filePath)
-      return createHash('md5').update(content).digest('hex')
-    } catch (e) {
-      logger.warn(`Failed to calculate hash for ${filePath}: ${(e as Error).message}`)
-      return ''
-    }
-  }
+  // We're using the imported utility functions directly
 
   /**
    * Check if a file has changed by comparing hashes
@@ -112,24 +83,16 @@ export class GhFetchTask implements Task {
    * @returns True if the file has changed or destination doesn't exist
    */
   private hasFileChanged(sourcePath: string, destPath: string): boolean {
-    // If destination doesn't exist, it has changed
-    if (!existsSync(destPath)) {
-      return true
-    }
-
-    // Compare file hashes
-    const sourceHash = this.getFileHash(sourcePath)
-    const destHash = this.getFileHash(destPath)
-
-    return sourceHash !== destHash
+    return hasFileChanged(sourcePath, destPath)
   }
 
   /**
    * Sync directory changes by comparing files and only copying changed ones
    * @param sourceDir Source directory path
    * @param destDir Destination directory path
+   * @param copyOps Optional array to collect copy operations
    */
-  private syncDirectoryChanges(sourceDir: string, destDir: string): void {
+  private syncDirectoryChanges(sourceDir: string, destDir: string, copyOps?: FileCopyOperation[]): void {
     // Create destination directory if it doesn't exist
     if (!existsSync(destDir)) {
       mkdirSync(destDir, { recursive: true })
@@ -152,7 +115,20 @@ export class GhFetchTask implements Task {
           if (this.hasFileChanged(sourcePath, destPath)) {
             const relPath = relative(sourceDir, sourcePath)
             logger.info(`File changed: ${relPath}`)
-            copyFileSync(sourcePath, destPath)
+            
+            if (copyOps) {
+              // Add to copy operations collection if provided
+              copyOps.push({
+                sourcePath,
+                destPath,
+                displaySource: relPath,
+                processedDestination: destPath,
+                repo: ''
+              })
+            } else {
+              // Directly copy if no collection provided
+              copyFileSync(sourcePath, destPath)
+            }
           }
         }
       }
@@ -186,9 +162,7 @@ export class GhFetchTask implements Task {
       try {
         // Get the latest commit hash from the repository
         logger.info(`Checking for updates in repository ${repo} (branch: ${branch})`)
-        latestCommitHash = execSync(`git ls-remote https://github.com/${repo}.git ${branch} | cut -f1`)
-          .toString()
-          .trim()
+        latestCommitHash = getLatestCommitHash(repo, branch)
 
         // Check if we need to sync
         shouldFetch = needsSync(cwd, repo, branch, latestCommitHash)
@@ -207,15 +181,14 @@ export class GhFetchTask implements Task {
     }
 
     // Create a temporary directory for the repository
-    const tempDir = join(tmpdir(), `gh-fetch-${randomUUID()}`)
-    mkdirSync(tempDir, { recursive: true })
+    // Download the repository and get cleanup function
+    const { tempDir, cleanup } = downloadRepository(repo, branch)
 
     try {
-      // Download the entire repository once
-      logger.info(`Downloading repository ${repo} to temporary directory`)
-      const gigetCommand = `npx giget gh:${repo}#${branch} ${this.escapeShellArg(tempDir)} --force`
-      execSync(gigetCommand, { stdio: 'inherit', cwd: process.cwd() })
 
+      // Collect file copy operations
+      const copyOperations: FileCopyOperation[] = []
+      
       // Process each file in the repository
       for (const file of files) {
         const { source, destination } = file
@@ -245,33 +218,31 @@ export class GhFetchTask implements Task {
             logger.info(`Processing directory from ${repo}:${displaySource} to ${processedDestination}`)
 
             // Copy directory with intelligent change detection
-            this.syncDirectoryChanges(sourcePath, destPath)
+            this.syncDirectoryChanges(sourcePath, destPath, copyOperations)
           } else {
             // Remove any leading slashes for display
             const displaySource = normalizedSource === '' ? '/' : normalizedSource
             logger.info(`Processing file from ${repo}:${displaySource} to ${processedDestination}`)
 
-            // Copy file only if it has changed
-            if (this.hasFileChanged(sourcePath, destPath)) {
-              logger.info(`File has changed, copying: ${processedDestination}`)
-              copyFileSync(sourcePath, destPath)
-            } else {
-              logger.info(`File unchanged, skipping: ${processedDestination}`)
-            }
+            // Add to copy operations instead of copying immediately
+            copyOperations.push({
+              sourcePath,
+              destPath,
+              displaySource,
+              processedDestination,
+              repo
+            })
           }
-
-          logger.success(`Successfully fetched to ${processedDestination}`)
         } catch (e) {
           throw new Error(`Failed to process from ${repo}/${normalizedSource}: ${(e as Error).message}`)
         }
       }
+      
+      // Execute all file copy operations in batch
+      executeCopyOperations(copyOperations)
     } finally {
       // Clean up temporary directory
-      try {
-        execSync(`rm -rf ${this.escapeShellArg(tempDir)}`, { stdio: 'inherit' })
-      } catch (e) {
-        logger.warn(`Failed to clean up temporary directory: ${(e as Error).message}`)
-      }
+      cleanup()
 
       // Update sync data if sync is enabled and we have a commit hash
       if (sync && latestCommitHash) {
@@ -287,37 +258,6 @@ export class GhFetchTask implements Task {
    * @returns True if the configuration is valid, false otherwise
    */
   public validate(config: CommonTaskConfig): boolean {
-    // Configuration is valid if repos is an array of repository groups
-    return (
-      Array.isArray(config.repos) &&
-      config.repos.every((repoGroup: unknown) => {
-        if (typeof repoGroup !== 'object' || repoGroup === null) return false
-
-        const typedRepo = repoGroup as Record<string, unknown>
-
-        // Required fields
-        if (typeof typedRepo.repo !== 'string' || !Array.isArray(typedRepo.files)) {
-          return false
-        }
-
-        // Optional fields
-        if (typedRepo.sync !== undefined && typeof typedRepo.sync !== 'boolean') {
-          return false
-        }
-
-        if (typedRepo.branch !== undefined && typeof typedRepo.branch !== 'string') {
-          return false
-        }
-
-        // Validate files
-        return typedRepo.files.every(
-          (file: unknown) =>
-            typeof file === 'object' &&
-            file !== null &&
-            typeof (file as Record<string, unknown>).source === 'string' &&
-            typeof (file as Record<string, unknown>).destination === 'string',
-        )
-      })
-    )
+    return validateGhFetchConfig(config)
   }
 }
