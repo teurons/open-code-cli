@@ -218,7 +218,7 @@ export function generateSyncSummary(results: FileSyncResult[]): SyncSummary {
 export function logSyncSummary(summary: SyncSummary, isRepoLevel: boolean = false, repoName?: string): void {
   const scope = isRepoLevel && repoName ? `Repository ${repoName}` : 'Overall';
   
-  logger.info(`${scope} sync summary: ${summary.successCount} files synced successfully, ${summary.failCount} files with issues`)
+  // Only log action breakdown, not the confusing summary line
   logger.info(`${scope} action breakdown: ${summary.copyCount} copied, ${summary.noneCount} unchanged, ${summary.mergeCount} need merge`)
   
   if (summary.failCount > 0) {

@@ -80,10 +80,12 @@ export class GhFetchTask implements Task {
       allResults.push(...repoResult.results)
     }
     
-    // Generate and log overall summary
-    const overallSummary = generateSyncSummary(allResults)
-    logger.info(`GitHub fetch completed with ${allResults.length} total files processed`)
-    logSyncSummary(overallSummary, false)
+    // Only log overall summary if there are actual file operations
+    if (allResults.length > 0) {
+      // Generate and log overall summary
+      const overallSummary = generateSyncSummary(allResults)
+      logSyncSummary(overallSummary, false)
+    }
   }
 
   // Using imported utility functions directly
