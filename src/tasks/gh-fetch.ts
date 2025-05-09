@@ -150,7 +150,7 @@ export class GhFetchTask implements Task {
     const { tempDir, cleanup } = downloadRepository(repo, branch)
 
     // Variable to store file data from sync operations
-    let fileData: Record<string, Record<string, { hash: string; syncedAt: string }>> = {}
+    let fileData: Record<string, Record<string, { hash: string; syncedAt: string; action: string }>> = {}
 
     try {
       // Collect file sync operations
@@ -254,6 +254,7 @@ export class GhFetchTask implements Task {
             trackerConfig.repos[repo].files[filePath] = {
               hash: fileInfo.hash,
               syncedAt: fileInfo.syncedAt,
+              action: fileInfo.action,
             }
           }
 

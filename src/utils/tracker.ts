@@ -11,6 +11,7 @@ const TRACKER_FILENAME = 'open-code-cli.tracker.json'
 export interface FileSyncData {
   hash: string
   syncedAt: string
+  action?: string
 }
 
 /**

@@ -16,11 +16,11 @@ export async function executeSyncOperations(
   operations: FileSyncOperation[],
   trackerConfig: TrackerConfig,
 ): Promise<{
-  updatedFiles: Record<string, Record<string, { hash: string; syncedAt: string }>>
+  updatedFiles: Record<string, Record<string, { hash: string; syncedAt: string; action: string }>>
   results: FileSyncResult[]
 }> {
   const results: FileSyncResult[] = []
-  const updatedFiles: Record<string, Record<string, { hash: string; syncedAt: string }>> = {}
+  const updatedFiles: Record<string, Record<string, { hash: string; syncedAt: string; action: string }>> = {}
 
   // Process each operation
   for (const operation of operations) {
@@ -33,12 +33,10 @@ export async function executeSyncOperations(
 
     try {
       // Determine what action to take
-      const actionResult = actionOnFile(
-        sourcePath,
-        localPath,
-        repo,
-        relativeLocalPath,
-        trackerConfig
+      const actionResult = actionOnFile(sourcePath, localPath, repo, relativeLocalPath, trackerConfig)
+
+      logger.info(
+        `Action for ${relativeLocalPath}: ${actionResult.action} and source: ${actionResult.sourceFileHash} local: ${actionResult.localFileHash} tracker: ${actionResult.trackerFileHash}`,
       )
 
       // Execute the action
@@ -56,11 +54,12 @@ export async function executeSyncOperations(
             copyFileSync(sourcePath, localPath)
             syncResult.fileHash = getFileHash(localPath)
             syncResult.message = 'File copied successfully'
-            
+
             // Update file data for tracking
             updatedFiles[repo][relativeLocalPath] = {
               hash: syncResult.fileHash,
               syncedAt: syncResult.syncedAt,
+              action: FileAction.COPY,
             }
           } catch (e) {
             syncResult.success = false
@@ -77,52 +76,54 @@ export async function executeSyncOperations(
         case FileAction.MERGE:
           try {
             logger.info(`Attempting AI merge for ${localPath}`)
-            
+
             // Get model and API key from configuration
             const model = getOpenRouterModel()
             const apiKey = getOpenRouterApiKey()
-            
+
             if (!model || !apiKey) {
               syncResult.success = false
-              syncResult.message = 'AI merge failed: OpenRouter configuration not found. Run init-open-router command first.'
+              syncResult.message =
+                'AI merge failed: OpenRouter configuration not found. Run init-open-router command first.'
               break
             }
-            
+
             // Read source and local file contents
             const sourceContent = readFileSync(sourcePath, 'utf-8')
             const localContent = readFileSync(localPath, 'utf-8')
-            
+
             // Use AI to merge the files
             const mergedContent = await aiMerge(localContent, sourceContent, model, apiKey)
-            
+
             if (!mergedContent) {
               syncResult.success = false
               syncResult.message = 'AI merge failed: Could not generate merged content'
               break
             }
-            
+
             // Create a temporary backup of the local file
             const backupPath = `${localPath}.backup-${new Date().getTime()}`
             copyFileSync(localPath, backupPath)
             logger.info(`Created backup of local file at ${backupPath}`)
-            
+
             // Write the merged content to the local file
             writeFileSync(localPath, mergedContent)
             syncResult.success = true
             syncResult.fileHash = getFileHash(localPath)
             syncResult.message = 'Files merged successfully using AI'
-            
+
             // Remove the backup file after successful merge
             try {
               unlinkSync(backupPath)
             } catch (e) {
               logger.warn(`Failed to remove backup file ${backupPath}: ${(e as Error).message}`)
             }
-            
+
             // Update file data for tracking
             updatedFiles[repo][relativeLocalPath] = {
               hash: syncResult.fileHash,
               syncedAt: syncResult.syncedAt,
+              action: FileAction.MERGE,
             }
           } catch (e) {
             syncResult.success = false
@@ -216,14 +217,16 @@ export function generateSyncSummary(results: FileSyncResult[]): SyncSummary {
  * @param repoName Optional repository name for repo-level summaries
  */
 export function logSyncSummary(summary: SyncSummary, isRepoLevel: boolean = false, repoName?: string): void {
-  const scope = isRepoLevel && repoName ? `Repository ${repoName}` : 'Overall';
-  
+  const scope = isRepoLevel && repoName ? `Repository ${repoName}` : 'Overall'
+
   // Only log action breakdown, not the confusing summary line
-  logger.info(`${scope} action breakdown: ${summary.copyCount} copied, ${summary.noneCount} unchanged, ${summary.mergeCount} need merge`)
-  
+  logger.info(
+    `${scope} action breakdown: ${summary.copyCount} copied, ${summary.noneCount} unchanged, ${summary.mergeCount} need merge`,
+  )
+
   if (summary.failCount > 0) {
     logger.warn(`${isRepoLevel ? 'Files' : 'Files across all repositories'} with issues:`)
-    summary.failedFiles.forEach(r => {
+    summary.failedFiles.forEach((r) => {
       const path = isRepoLevel ? r.operation.relativeLocalPath : `${r.operation.repo}/${r.operation.relativeLocalPath}`
       logger.warn(`- ${path}: ${r.actionResult.action} - ${r.syncResult.message}`)
     })
