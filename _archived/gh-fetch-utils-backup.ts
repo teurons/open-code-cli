@@ -1,13 +1,13 @@
 import { createHash } from 'crypto'
 import { existsSync, readFileSync, mkdirSync, copyFileSync, readdirSync } from 'fs'
-import { logger } from '../logger'
-import { context } from '../context'
-import { TaskConfig as CommonTaskConfig } from '../types/common'
+import { logger } from '../src/logger'
+import { context } from '../src/context'
+import { TaskConfig as CommonTaskConfig } from '../src/types/common'
 import { execSync } from 'child_process'
 import { join, relative } from 'path'
 import { tmpdir } from 'os'
 import { randomUUID } from 'crypto'
-import { TrackerConfig } from './tracker'
+import { TrackerConfig } from '../src/utils/tracker'
 
 /**
  * Validates dependencies in the task configuration
@@ -116,7 +116,7 @@ export function actionOnFile(
       action: FileAction.COPY,
       sourceFileHash: getFileHash(sourcePath),
       localFileHash: '',
-      trackerFileHash: null
+      trackerFileHash: null,
     }
   }
 
@@ -135,7 +135,7 @@ export function actionOnFile(
       action: FileAction.COPY,
       sourceFileHash,
       localFileHash,
-      trackerFileHash
+      trackerFileHash,
     }
   }
 
@@ -146,7 +146,7 @@ export function actionOnFile(
       action: FileAction.COPY,
       sourceFileHash,
       localFileHash,
-      trackerFileHash
+      trackerFileHash,
     }
   }
 
@@ -157,7 +157,7 @@ export function actionOnFile(
       action: FileAction.NONE,
       sourceFileHash,
       localFileHash,
-      trackerFileHash
+      trackerFileHash,
     }
   }
 
@@ -168,7 +168,7 @@ export function actionOnFile(
       action: FileAction.MERGE,
       sourceFileHash,
       localFileHash,
-      trackerFileHash
+      trackerFileHash,
     }
   }
 
@@ -177,7 +177,7 @@ export function actionOnFile(
     action: FileAction.NONE,
     sourceFileHash,
     localFileHash,
-    trackerFileHash
+    trackerFileHash,
   }
 }
 
@@ -305,15 +305,15 @@ export function executeSyncOperations(
       operation: op,
       actionResult,
       syncResult: {
-        success: false
-      }
+        success: false,
+      },
     }
 
     logger.info(
       `Action for ${op.relativeLocalPath}: ${action} | ` +
-      `Source: ${sourceFileHash.substring(0, 8)} | ` +
-      `Local: ${localFileHash.substring(0, 8) || 'N/A'} | ` +
-      `Tracker: ${trackerFileHash ? trackerFileHash.substring(0, 8) : 'N/A'}`
+        `Source: ${sourceFileHash.substring(0, 8)} | ` +
+        `Local: ${localFileHash.substring(0, 8) || 'N/A'} | ` +
+        `Tracker: ${trackerFileHash ? trackerFileHash.substring(0, 8) : 'N/A'}`,
     )
 
     // Process the file based on the determined action
@@ -325,26 +325,26 @@ export function executeSyncOperations(
           // Calculate and store hash and syncedAt for the updated file
           const fileHash = getFileHash(op.localPath)
           const now = new Date().toISOString()
-          
+
           // Update the files object
           updatedFiles[op.repo]![op.relativeLocalPath] = {
             hash: fileHash,
-            syncedAt: now
+            syncedAt: now,
           }
-          
+
           // Update result
           result.syncResult = {
             success: true,
             fileHash,
             syncedAt: now,
-            message: `Copied successfully`
+            message: `Copied successfully`,
           }
-          
+
           logger.success(`${op.relativeSourcePath} -> ${op.relativeLocalPath}`)
         } catch (error) {
           result.syncResult = {
             success: false,
-            message: `Failed to copy: ${(error as Error).message}`
+            message: `Failed to copy: ${(error as Error).message}`,
           }
           logger.error(`Failed to copy ${op.relativeSourcePath}: ${(error as Error).message}`)
         }
@@ -354,7 +354,7 @@ export function executeSyncOperations(
         // Both source and local file have changed, need AI merge
         result.syncResult = {
           success: false,
-          message: `Needs manual merge`
+          message: `Needs manual merge`,
         }
         logger.warn(
           `Both remote and local changes detected for ${op.relativeSourcePath}. Consider using ai_merge_file task.`,
@@ -366,12 +366,12 @@ export function executeSyncOperations(
         // No changes or only local changes, skip
         result.syncResult = {
           success: true,
-          message: `No changes needed`
+          message: `No changes needed`,
         }
         logger.debug(`File unchanged or only local changes, skipping: ${op.relativeLocalPath}`)
         break
     }
-    
+
     // Add the result to our results array
     results.push(result)
   }
@@ -385,12 +385,12 @@ export function executeSyncOperations(
  * @returns Summary object with counts and details
  */
 export function generateSyncSummary(results: FileSyncResult[]): SyncSummary {
-  const successCount = results.filter(r => r.syncResult.success).length
+  const successCount = results.filter((r) => r.syncResult.success).length
   const failCount = results.length - successCount
-  const copyCount = results.filter(r => r.actionResult.action === FileAction.COPY).length
-  const noneCount = results.filter(r => r.actionResult.action === FileAction.NONE).length
-  const mergeCount = results.filter(r => r.actionResult.action === FileAction.MERGE).length
-  const failedFiles = results.filter(r => !r.syncResult.success)
+  const copyCount = results.filter((r) => r.actionResult.action === FileAction.COPY).length
+  const noneCount = results.filter((r) => r.actionResult.action === FileAction.NONE).length
+  const mergeCount = results.filter((r) => r.actionResult.action === FileAction.MERGE).length
+  const failedFiles = results.filter((r) => !r.syncResult.success)
 
   return {
     totalFiles: results.length,
@@ -399,7 +399,7 @@ export function generateSyncSummary(results: FileSyncResult[]): SyncSummary {
     copyCount,
     noneCount,
     mergeCount,
-    failedFiles
+    failedFiles,
   }
 }
 
@@ -410,14 +410,18 @@ export function generateSyncSummary(results: FileSyncResult[]): SyncSummary {
  * @param repoName Optional repository name for repo-level summaries
  */
 export function logSyncSummary(summary: SyncSummary, isRepoLevel: boolean = false, repoName?: string): void {
-  const scope = isRepoLevel && repoName ? `Repository ${repoName}` : 'Overall';
-  
-  logger.info(`${scope} sync summary: ${summary.successCount} files synced successfully, ${summary.failCount} files with issues`)
-  logger.info(`${scope} action breakdown: ${summary.copyCount} copied, ${summary.noneCount} unchanged, ${summary.mergeCount} need merge`)
-  
+  const scope = isRepoLevel && repoName ? `Repository ${repoName}` : 'Overall'
+
+  logger.info(
+    `${scope} sync summary: ${summary.successCount} files synced successfully, ${summary.failCount} files with issues`,
+  )
+  logger.info(
+    `${scope} action breakdown: ${summary.copyCount} copied, ${summary.noneCount} unchanged, ${summary.mergeCount} need merge`,
+  )
+
   if (summary.failCount > 0) {
     logger.warn(`${isRepoLevel ? 'Files' : 'Files across all repositories'} with issues:`)
-    summary.failedFiles.forEach(r => {
+    summary.failedFiles.forEach((r) => {
       const path = isRepoLevel ? r.operation.relativeLocalPath : `${r.operation.repo}/${r.operation.relativeLocalPath}`
       logger.warn(`- ${path}: ${r.actionResult.action} - ${r.syncResult.message}`)
     })
