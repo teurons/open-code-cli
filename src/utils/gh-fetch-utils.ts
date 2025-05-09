@@ -140,6 +140,8 @@ export interface FileSyncOperation {
   displaySource: string
   processedDestination: string
   repo: string
+  relativeSourcePath?: string
+  relativeDestPath?: string
 }
 
 /**
@@ -147,14 +149,12 @@ export interface FileSyncOperation {
  * @param operations Array of file sync operations
  */
 export function executeSyncOperations(operations: FileSyncOperation[]): void {
-  console.log('operations', operations)
   for (const op of operations) {
     if (hasFileChanged(op.sourcePath, op.destPath)) {
-      logger.info(`File has changed, copying: ${op.processedDestination}`)
       copyFileSync(op.sourcePath, op.destPath)
-      logger.success(`Successfully fetched to ${op.processedDestination}`)
+      logger.success(`${op.relativeSourcePath || op.displaySource} -> ${op.relativeDestPath || op.processedDestination}`)
     } else {
-      logger.info(`File unchanged, skipping: ${op.processedDestination}`)
+      logger.info(`File unchanged, skipping: ${op.relativeDestPath || op.processedDestination}`)
     }
   }
 }

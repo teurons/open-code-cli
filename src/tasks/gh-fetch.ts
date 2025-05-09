@@ -78,40 +78,39 @@ export class GhFetchTask implements Task {
    * @param destDir Destination directory path
    * @param syncOps Array to collect sync operations
    */
-  private syncDirectoryChanges(sourceDir: string, destDir: string, syncOps: FileSyncOperation[]): void {
-    // Create destination directory if it doesn't exist
+  private syncDirectoryChanges(sourceDir: string, destDir: string, syncOps: FileSyncOperation[], tempDir?: string, cwd?: string): void {
+    // Create destination directory if needed
     if (!existsSync(destDir)) {
       mkdirSync(destDir, { recursive: true })
     }
 
     try {
-      // Get all files and directories in the source directory
-      const entries = readdirSync(sourceDir, { withFileTypes: true })
-
-      // Process each entry
-      for (const entry of entries) {
+      // Process each entry in the directory
+      readdirSync(sourceDir, { withFileTypes: true }).forEach(entry => {
         const sourcePath = join(sourceDir, entry.name)
         const destPath = join(destDir, entry.name)
 
         if (entry.isDirectory()) {
-          // Recursively sync subdirectory
-          this.syncDirectoryChanges(sourcePath, destPath, syncOps)
+          // Recursively process subdirectory
+          this.syncDirectoryChanges(sourcePath, destPath, syncOps, tempDir, cwd)
         } else {
-          // Add all files to sync operations collection
-          const relPath = relative(sourceDir, sourcePath)
+          // Add file to sync operations
+          const relativeSourcePath = tempDir ? relative(tempDir, sourcePath) : relative(sourceDir, sourcePath)
+          const relativeDestPath = cwd ? relative(cwd, destPath) : relative(destDir, destPath)
           
           syncOps.push({
             sourcePath,
             destPath,
-            displaySource: relPath,
+            displaySource: relative(sourceDir, sourcePath),
             processedDestination: destPath,
             repo: '',
+            relativeSourcePath,
+            relativeDestPath
           })
         }
-      }
+      })
     } catch (e) {
       logger.warn(`Error syncing directory ${sourceDir}: ${(e as Error).message}`)
-      // Log error but don't attempt to recover
     }
   }
 
@@ -172,42 +171,38 @@ export class GhFetchTask implements Task {
         const processedSource = context.replaceVariables(source)
         const processedDestination = context.replaceVariables(destination)
 
-        // Normalize paths to avoid double slashes
+        // Create clean paths for source and destination
         const normalizedSource = normalize(processedSource).replace(/^\/+/, '')
         const sourcePath = join(tempDir, normalizedSource)
         const destPath = join(cwd, processedDestination)
-
+        
         // Ensure destination directory exists
         const destDir = dirname(destPath)
         if (!existsSync(destDir)) {
           mkdirSync(destDir, { recursive: true })
         }
-
+        
         try {
-          // Auto-detect if it's a file or directory
-          const stats = statSync(sourcePath)
-
-          if (stats.isDirectory()) {
-            // Remove any leading slashes for display
-            const displaySource = normalizedSource === '' ? '/' : normalizedSource
-            logger.info(`Processing directory from ${repo}${displaySource} to ${processedDestination}`)
-
-            // Copy directory with intelligent change detection
-            this.syncDirectoryChanges(sourcePath, destPath, syncOperations)
-          } else {
-            // Remove any leading slashes for display
-            const displaySource = normalizedSource === '' ? '/' : normalizedSource
-            logger.info(`Processing file from ${repo}${displaySource} to ${processedDestination}`)
-
-            // Add to sync operations instead of copying immediately
+          const processFile = () => {
+            const relativeSourcePath = relative(tempDir, sourcePath)
+            const relativeDestPath = relative(cwd, destPath)
+            
             syncOperations.push({
               sourcePath,
               destPath,
-              displaySource,
+              displaySource: normalizedSource === '' ? '/' : normalizedSource,
               processedDestination,
               repo,
+              relativeSourcePath,
+              relativeDestPath
             })
           }
+          
+          // Process based on whether it's a file or directory
+          const stats = statSync(sourcePath)
+          stats.isDirectory() 
+            ? this.syncDirectoryChanges(sourcePath, destPath, syncOperations, tempDir, cwd)
+            : processFile()
         } catch (e) {
           throw new Error(`Failed to process from ${repo}/${normalizedSource}: ${(e as Error).message}`)
         }
