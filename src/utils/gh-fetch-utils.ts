@@ -7,7 +7,7 @@ import { execSync } from 'child_process'
 import { join } from 'path'
 import { tmpdir } from 'os'
 import { randomUUID } from 'crypto'
-import { getLastSyncedFileHash } from './tracker'
+import { TrackerConfig } from './tracker'
 
 /**
  * Validates dependencies in the task configuration
@@ -108,7 +108,7 @@ export function actionOnFile(
   localPath: string,
   repo: string,
   relativeFilePath: string,
-  cwd: string,
+  trackerConfig: TrackerConfig,
 ): FileActionResult {
   // If local file doesn't exist, we need to copy it
   if (!existsSync(localPath)) {
@@ -127,7 +127,7 @@ export function actionOnFile(
   const localFileHash = getFileHash(localPath)
 
   // 3. Get hash of localFile from tracker - localFileHashFromTracker
-  const trackerFileHash = getLastSyncedFileHash(cwd, repo, relativeFilePath)
+  const trackerFileHash = trackerConfig.repos[repo]?.files?.[relativeFilePath]?.hash || null
 
   if (!trackerFileHash) {
     // First time syncing this file
@@ -238,7 +238,7 @@ export interface FileSyncOperation {
  */
 export function executeSyncOperations(
   operations: FileSyncOperation[],
-  cwd: string,
+  trackerConfig: TrackerConfig,
 ): Record<string, Record<string, { hash: string; syncedAt: string }>> {
   // Store updated file data by repository
   const updatedFiles: Record<string, Record<string, { hash: string; syncedAt: string }>> = {}
@@ -256,7 +256,7 @@ export function executeSyncOperations(
     }
 
     // Determine what action to take for this file
-    const actionResult = actionOnFile(op.sourcePath, op.localPath, op.repo, op.relativeLocalPath, cwd)
+    const actionResult = actionOnFile(op.sourcePath, op.localPath, op.repo, op.relativeLocalPath, trackerConfig)
     const { action, sourceFileHash, localFileHash, trackerFileHash } = actionResult
 
     logger.info(

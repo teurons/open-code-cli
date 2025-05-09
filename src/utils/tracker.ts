@@ -8,7 +8,7 @@ const TRACKER_FILENAME = 'open-code-cli.tracker.json'
 /**
  * Interface for file sync tracking data
  */
-interface FileSyncData {
+export interface FileSyncData {
   hash: string
   syncedAt: string
 }
@@ -16,7 +16,7 @@ interface FileSyncData {
 /**
  * Interface for repository sync tracking data
  */
-interface RepoSyncData {
+export interface RepoSyncData {
   repo: string
   branch: string
   lastCommitHash: string
@@ -27,7 +27,7 @@ interface RepoSyncData {
 /**
  * Interface for the tracker file structure
  */
-interface TrackerConfig {
+export interface TrackerConfig {
   repos: Record<string, RepoSyncData>
 }
 
@@ -125,10 +125,12 @@ export function needsSync(directory: string, repo: string, branch: string, lates
  * @param directory The directory containing the tracker file
  * @param repo The repository name
  * @param filePath The relative path of the file
+ * @param trackerConfig Optional tracker config to use instead of reading from disk
  * @returns The last synced hash or null if not found
  */
-export function getLastSyncedFileHash(directory: string, repo: string, filePath: string): string | null {
-  const config = readTrackerConfig(directory)
+export function getLastSyncedFileHash(directory: string, repo: string, filePath: string, trackerConfig?: TrackerConfig): string | null {
+  // Use provided tracker config or read from disk
+  const config = trackerConfig || readTrackerConfig(directory)
 
   if (!config.repos[repo] || !config.repos[repo].files || !config.repos[repo].files[filePath]) {
     return null

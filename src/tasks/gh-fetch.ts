@@ -49,6 +49,10 @@ export class GhFetchTask implements Task {
   public async execute(taskContext: TaskContext): Promise<void> {
     const { repos, depends } = taskContext.config
     const { cwd } = taskContext
+    
+    // Initialize tracker file if it doesn't exist
+    const trackerConfig = readTrackerConfig(cwd)
+    writeTrackerConfig(cwd, trackerConfig)
 
     // Check dependencies and validate repos configuration
     validateDependencies(depends)
@@ -143,6 +147,8 @@ export class GhFetchTask implements Task {
     sync = false,
     branch = 'main',
   ): Promise<void> {
+    // Read tracker config once at the beginning
+    const trackerConfig = readTrackerConfig(cwd)
     // Check if we need to sync by getting the latest commit hash
     let shouldFetch = true
     let latestCommitHash = ''
@@ -225,7 +231,7 @@ export class GhFetchTask implements Task {
       }
 
       // Execute all file sync operations in batch and get updated file data
-      fileData = executeSyncOperations(syncOperations, cwd)
+      fileData = executeSyncOperations(syncOperations, trackerConfig)
     } finally {
       // Clean up temporary directory
       cleanup()
