@@ -51,6 +51,7 @@ export function actionOnFile(
   repo: string,
   relativeFilePath: string,
   trackerConfig: TrackerConfig,
+  sourceCommitHash?: string,
 ): FileActionResult {
   // If local file doesn't exist, we need to copy it
   if (!existsSync(localPath)) {
@@ -68,9 +69,40 @@ export function actionOnFile(
   // 2. Calculate currentHash of localFile - localFileHash
   const localFileHash = getFileHash(localPath)
 
-  // 3. Get hash of localFile from tracker - localFileHashFromTracker
+  // 3. Get hash and action of localFile from tracker
   const trackerFileHash = trackerConfig.repos[repo]?.files?.[relativeFilePath]?.hash || null
+  const trackerAction = trackerConfig.repos[repo]?.files?.[relativeFilePath]?.action || null
+  
+  // 4. Get last commit hash from tracker and use sourceCommitHash if provided
+  const lastCommitHash = trackerConfig.repos[repo]?.lastCommitHash || null
+  const currentCommitHash = sourceCommitHash || lastCommitHash || null
 
+  // Special handling for files that were previously merged
+  if (trackerAction === FileAction.MERGE) {
+    // If the file was previously merged, we should never copy it
+    // Instead, we should either merge again or do nothing based on commit hash
+    
+    // If commit hash hasn't changed, no action needed regardless of file hash changes
+    if (lastCommitHash === currentCommitHash) {
+      return {
+        action: FileAction.NONE,
+        sourceFileHash,
+        localFileHash,
+        trackerFileHash
+      }
+    }
+    
+    // If commit hash has changed, we need to merge again
+    // This overrides the normal hash-based logic below
+    return {
+      action: FileAction.MERGE,
+      sourceFileHash,
+      localFileHash,
+      trackerFileHash
+    }
+  }
+
+  // If we don't have tracking data yet
   if (!trackerFileHash) {
     // First time syncing this file
     return {

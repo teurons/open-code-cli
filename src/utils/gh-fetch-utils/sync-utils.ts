@@ -15,6 +15,7 @@ import { getOpenRouterApiKey, getOpenRouterModel } from '../config'
 export async function executeSyncOperations(
   operations: FileSyncOperation[],
   trackerConfig: TrackerConfig,
+  sourceCommitHash?: string,
 ): Promise<{
   updatedFiles: Record<string, Record<string, { hash: string; syncedAt: string; action: string }>>
   results: FileSyncResult[]
@@ -33,7 +34,7 @@ export async function executeSyncOperations(
 
     try {
       // Determine what action to take
-      const actionResult = actionOnFile(sourcePath, localPath, repo, relativeLocalPath, trackerConfig)
+      const actionResult = actionOnFile(sourcePath, localPath, repo, relativeLocalPath, trackerConfig, sourceCommitHash)
 
       logger.info(
         `Action for ${relativeLocalPath}: ${actionResult.action} and source: ${actionResult.sourceFileHash} local: ${actionResult.localFileHash} tracker: ${actionResult.trackerFileHash}`,

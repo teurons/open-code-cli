@@ -200,7 +200,7 @@ export class GhFetchTask implements Task {
       }
 
       // Execute all file sync operations in batch and get updated file data and results
-      const syncResult = await executeSyncOperations(syncOperations, trackerConfig)
+      const syncResult = await executeSyncOperations(syncOperations, trackerConfig, latestCommitHash)
       fileData = syncResult.updatedFiles
       
       // Generate and log repository-level summary
