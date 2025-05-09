@@ -31,7 +31,7 @@ node ../../open-code-cli/dist/run.js choose-workflow ../../open-code-cli/example
 ```
 
 ```
-rm -rf locospec-laravel && rm -f open-code-cli.tracker.json && ./../bin/run workflow locospec-laravel.json
+rm -rf locospec-laravel && rm -rf test-open-code-cli && rm -f open-code-cli.tracker.json && ./../bin/run workflow locospec-laravel.json
 ```
 
 ```

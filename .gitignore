@@ -122,3 +122,5 @@ my-blog/
 temp/
 .open-code-cli.tracker.json
 examples/locospec-laravel
+examples/test-open-code-cli/README.md
+examples/open-code-cli.tracker.json

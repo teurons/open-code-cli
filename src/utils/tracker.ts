@@ -10,7 +10,7 @@ const TRACKER_FILENAME = 'open-code-cli.tracker.json'
  */
 interface FileSyncData {
   hash: string
-  lastSyncedAt: string
+  syncedAt: string
 }
 
 /**
@@ -20,7 +20,7 @@ interface RepoSyncData {
   repo: string
   branch: string
   lastCommitHash: string
-  lastSyncedAt: string
+  syncedAt: string
   files: Record<string, FileSyncData>
 }
 
@@ -85,7 +85,7 @@ export function updateRepoSyncData(directory: string, repo: string, branch: stri
     repo,
     branch,
     lastCommitHash: commitHash,
-    lastSyncedAt: new Date().toISOString(),
+    syncedAt: new Date().toISOString(),
     files: existingFiles,
   }
 

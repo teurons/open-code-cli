@@ -239,9 +239,9 @@ export interface FileSyncOperation {
 export function executeSyncOperations(
   operations: FileSyncOperation[],
   cwd: string,
-): Record<string, Record<string, string>> {
-  // Store updated file hashes by repository
-  const updatedHashes: Record<string, Record<string, string>> = {}
+): Record<string, Record<string, { hash: string; syncedAt: string }>> {
+  // Store updated file data by repository
+  const updatedFiles: Record<string, Record<string, { hash: string; syncedAt: string }>> = {}
 
   // Process operations directly without grouping
   for (const op of operations) {
@@ -250,9 +250,9 @@ export function executeSyncOperations(
       continue
     }
 
-    // Ensure the repository entry exists in the hashes object
-    if (!updatedHashes[op.repo]) {
-      updatedHashes[op.repo] = {}
+    // Ensure the repository entry exists in the files object
+    if (!updatedFiles[op.repo]) {
+      updatedFiles[op.repo] = {}
     }
 
     // Determine what action to take for this file
@@ -271,10 +271,14 @@ export function executeSyncOperations(
       case FileAction.COPY:
         // Source file has changed, safe to copy
         copyFileSync(op.sourcePath, op.localPath)
-        // Calculate and store hash for the updated file
+        // Calculate and store hash and syncedAt for the updated file
         const fileHash = getFileHash(op.localPath)
-        // We've already checked that updatedHashes[op.repo] exists above
-        updatedHashes[op.repo]![op.relativeLocalPath] = fileHash
+        const now = new Date().toISOString()
+        // We've already checked that updatedFiles[op.repo] exists above
+        updatedFiles[op.repo]![op.relativeLocalPath] = {
+          hash: fileHash,
+          syncedAt: now
+        }
         logger.success(`${op.relativeSourcePath} -> ${op.relativeLocalPath}`)
         break
 
@@ -293,7 +297,7 @@ export function executeSyncOperations(
     }
   }
 
-  return updatedHashes
+  return updatedFiles
 }
 
 /**

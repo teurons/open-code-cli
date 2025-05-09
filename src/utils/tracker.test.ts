@@ -52,7 +52,7 @@ describe('Tracker Utils', () => {
     })
     
     it('should read and parse tracker config', () => {
-      const mockConfig = { repos: { 'owner/repo': { repo: 'owner/repo', branch: 'main', lastCommitHash: 'abc123', lastSyncedAt: '2023-01-01' } } }
+      const mockConfig = { repos: { 'owner/repo': { repo: 'owner/repo', branch: 'main', lastCommitHash: 'abc123', syncedAt: '2023-01-01' } } }
       
       (fs.existsSync as jest.Mock).mockReturnValue(true)
       (fs.readFileSync as jest.Mock).mockReturnValue(JSON.stringify(mockConfig))
@@ -77,7 +77,7 @@ describe('Tracker Utils', () => {
   
   describe('writeTrackerConfig', () => {
     it('should write tracker config to file', () => {
-      const mockConfig = { repos: { 'owner/repo': { repo: 'owner/repo', branch: 'main', lastCommitHash: 'abc123', lastSyncedAt: '2023-01-01' } } }
+      const mockConfig = { repos: { 'owner/repo': { repo: 'owner/repo', branch: 'main', lastCommitHash: 'abc123', syncedAt: '2023-01-01' } } }
       
       writeTrackerConfig(mockDir, mockConfig)
       
@@ -113,7 +113,7 @@ describe('Tracker Utils', () => {
         repo: mockRepo,
         branch: mockBranch,
         lastCommitHash: mockCommitHash,
-        lastSyncedAt: mockDate.toISOString()
+        syncedAt: mockDate.toISOString()
       })
     })
   })
@@ -134,7 +134,7 @@ describe('Tracker Utils', () => {
             repo: mockRepo, 
             branch: 'other-branch', 
             lastCommitHash: mockCommitHash, 
-            lastSyncedAt: '2023-01-01' 
+            syncedAt: '2023-01-01' 
           } 
         } 
       })
@@ -151,7 +151,7 @@ describe('Tracker Utils', () => {
             repo: mockRepo, 
             branch: mockBranch, 
             lastCommitHash: mockCommitHash, 
-            lastSyncedAt: '2023-01-01' 
+            syncedAt: '2023-01-01' 
           } 
         } 
       })

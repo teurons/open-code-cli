@@ -174,8 +174,8 @@ export class GhFetchTask implements Task {
     // Download the repository and get cleanup function
     const { tempDir, cleanup } = downloadRepository(repo, branch)
 
-    // Variable to store file hashes from sync operations
-    let fileHashes: Record<string, Record<string, string>> = {}
+    // Variable to store file data from sync operations
+    let fileData: Record<string, Record<string, { hash: string; syncedAt: string }>> = {}
 
     try {
       // Collect file sync operations
@@ -224,8 +224,8 @@ export class GhFetchTask implements Task {
         }
       }
 
-      // Execute all file sync operations in batch and get updated file hashes
-      fileHashes = executeSyncOperations(syncOperations, cwd)
+      // Execute all file sync operations in batch and get updated file data
+      fileData = executeSyncOperations(syncOperations, cwd)
     } finally {
       // Clean up temporary directory
       cleanup()
@@ -239,33 +239,34 @@ export class GhFetchTask implements Task {
         // Get the current tracker config
         const trackerConfig = readTrackerConfig(cwd)
 
-        // If we have updated file hashes from sync operations, update them in the tracker
-        if (fileHashes[repo] && Object.keys(fileHashes[repo]).length > 0) {
+        // If we have updated file data from sync operations, update them in the tracker
+        if (fileData[repo] && Object.keys(fileData[repo]).length > 0) {
           // Make sure the repo entry exists
           if (!trackerConfig.repos[repo]) {
             trackerConfig.repos[repo] = {
               repo,
               branch,
               lastCommitHash: latestCommitHash,
-              lastSyncedAt: new Date().toISOString(),
+              syncedAt: new Date().toISOString(),
               files: {},
             }
           }
 
-          // Update file hashes in the tracker config
-          const now = new Date().toISOString()
-          for (const [filePath, fileHash] of Object.entries(fileHashes[repo]) as [string, string][]) {
+          // Update file data in the tracker config
+          for (const [filePath, fileInfo] of Object.entries(fileData[repo] || {})) {
             trackerConfig.repos[repo].files[filePath] = {
-              hash: fileHash,
-              lastSyncedAt: now,
+              hash: fileInfo.hash,
+              syncedAt: fileInfo.syncedAt,
             }
           }
 
           // Remove any existing redundant path properties
-          for (const filePath in trackerConfig.repos[repo].files) {
-            const fileData = trackerConfig.repos[repo].files[filePath] as any
-            if (fileData && fileData.path) {
-              delete fileData.path
+          if (trackerConfig.repos[repo] && trackerConfig.repos[repo].files) {
+            for (const filePath in trackerConfig.repos[repo].files) {
+              const fileData = trackerConfig.repos[repo].files[filePath] as any
+              if (fileData && fileData.path) {
+                delete fileData.path
+              }
             }
           }
         }
