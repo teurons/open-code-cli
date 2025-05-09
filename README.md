@@ -196,13 +196,13 @@ Runs a script from package.json using the detected package manager.
 }
 ```
 
-#### `gh_fetch`
+#### `gh_sync`
 
 Fetches files or directories from GitHub repositories.
 
 ```json
 {
-  "task": "gh_fetch",
+  "task": "gh_sync",
   "repo": "owner/repo",
   "path": "path/to/file.ts",
   "output": "./local/path/file.ts",

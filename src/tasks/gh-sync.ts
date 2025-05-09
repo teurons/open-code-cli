@@ -9,7 +9,7 @@ import {
   validateDependencies,
   validateReposConfiguration,
   validateRepositoryGroup,
-  validateGhFetchConfig,
+  validateGhSyncConfig,
   getLatestCommitHash,
   downloadRepository,
   FileSyncOperation,
@@ -18,7 +18,7 @@ import {
   generateSyncSummary,
   logSyncSummary,
   syncDirectoryChanges,
-} from '../utils/gh-fetch-utils'
+} from '../utils/gh-sync-utils'
 
 /**
  * Represents a file or directory to be fetched from a GitHub repository
@@ -44,7 +44,7 @@ interface RepoGroup {
   branch?: string
 }
 
-export class GhFetchTask implements Task {
+export class GhSyncTask implements Task {
   // updateDirectoryFileHashes method removed as it's no longer needed
   /**
    * Execute the GitHub fetch task
@@ -79,7 +79,7 @@ export class GhFetchTask implements Task {
       const repoResult = await this.processRepo(processedRepo, files, cwd, sync, branch)
       allResults.push(...repoResult.results)
     }
-    
+
     // Only log overall summary if there are actual file operations
     if (allResults.length > 0) {
       // Generate and log overall summary
@@ -133,7 +133,7 @@ export class GhFetchTask implements Task {
           return {
             repo,
             results: [],
-            success: true
+            success: true,
           }
         }
 
@@ -202,16 +202,16 @@ export class GhFetchTask implements Task {
       // Execute all file sync operations in batch and get updated file data and results
       const syncResult = await executeSyncOperations(syncOperations, trackerConfig, latestCommitHash)
       fileData = syncResult.updatedFiles
-      
+
       // Generate and log repository-level summary
       const repoSummary = generateSyncSummary(syncResult.results)
       logSyncSummary(repoSummary, true, repo)
-      
+
       // Return the results from this repo processing
       return {
         repo,
         results: syncResult.results,
-        success: repoSummary.failCount === 0
+        success: repoSummary.failCount === 0,
       }
     } catch (error) {
       // Handle any errors during processing
@@ -219,7 +219,7 @@ export class GhFetchTask implements Task {
       return {
         repo,
         results: [],
-        success: false
+        success: false,
       }
     } finally {
       // Clean up temporary directory
@@ -228,7 +228,7 @@ export class GhFetchTask implements Task {
       // Update sync data if sync is enabled and we have a commit hash
       if (sync && latestCommitHash) {
         logger.info(`Updating sync data for repository ${repo}`)
-        
+
         // Update the tracker config we already have
 
         // Make sure the repo entry exists with updated commit hash
@@ -242,13 +242,12 @@ export class GhFetchTask implements Task {
           }
         } else {
           // Update the commit hash and synced time
-          trackerConfig.repos[repo].lastCommitHash = latestCommitHash;
-          trackerConfig.repos[repo].syncedAt = new Date().toISOString();
+          trackerConfig.repos[repo].lastCommitHash = latestCommitHash
+          trackerConfig.repos[repo].syncedAt = new Date().toISOString()
         }
-        
+
         // If we have updated file data from sync operations, update them in the tracker
         if (fileData[repo] && Object.keys(fileData[repo]).length > 0) {
-
           // Update file data in the tracker config
           for (const [filePath, fileInfo] of Object.entries(fileData[repo] || {})) {
             trackerConfig.repos[repo].files[filePath] = {
@@ -272,13 +271,13 @@ export class GhFetchTask implements Task {
         // Write the updated tracker config
         writeTrackerConfig(cwd, trackerConfig)
       }
-      
+
       // If we reached this point without returning, it means there were no operations
       // Return an empty successful result
       return {
         repo,
         results: [],
-        success: true
+        success: true,
       }
     }
   }
@@ -289,6 +288,6 @@ export class GhFetchTask implements Task {
    * @returns True if the configuration is valid, false otherwise
    */
   public validate(config: CommonTaskConfig): boolean {
-    return validateGhFetchConfig(config)
+    return validateGhSyncConfig(config)
   }
 }

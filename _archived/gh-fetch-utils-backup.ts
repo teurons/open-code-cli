@@ -488,7 +488,7 @@ export function syncDirectoryChanges(
  * @param config The task configuration to validate
  * @returns True if the configuration is valid, false otherwise
  */
-export function validateGhFetchConfig(config: CommonTaskConfig): boolean {
+export function validateGhSyncConfig(config: CommonTaskConfig): boolean {
   // Configuration is valid if repos is an array of repository groups
   return (
     Array.isArray(config.repos) &&

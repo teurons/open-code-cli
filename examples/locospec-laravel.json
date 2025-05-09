@@ -1,7 +1,7 @@
 {
   "workflow": [
     {
-      "task": "gh_fetch",
+      "task": "gh_sync",
       "repos": [
         {
           "repo": "locospec/locospec-laravel",

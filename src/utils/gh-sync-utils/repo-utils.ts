@@ -23,7 +23,7 @@ export function getLatestCommitHash(repo: string, branch: string): string {
  * @returns The path to the temporary directory and a cleanup function
  */
 export function downloadRepository(repo: string, branch: string): { tempDir: string; cleanup: () => void } {
-  const tempDir = join(tmpdir(), `gh-fetch-${randomUUID()}`)
+  const tempDir = join(tmpdir(), `gh-sync-${randomUUID()}`)
   mkdirSync(tempDir, { recursive: true })
 
   // Download the entire repository once

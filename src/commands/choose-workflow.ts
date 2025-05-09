@@ -72,7 +72,7 @@ export async function handler(argv: ArgumentsCamelCase<ChooseWorkflowArgv>) {
           const firstFile = task.files[0]?.path || ''
           description += `: ${firstFile}${fileCount > 1 ? ` (+${fileCount - 1} more)` : ''}`
         }
-      } else if (taskType === 'gh_fetch') {
+      } else if (taskType === 'gh_sync') {
         const repoCount = task.repos?.length || 0
         description += `: ${repoCount} repos`
       } else if (taskType === 'ai_content_merge') {
