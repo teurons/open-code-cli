@@ -152,9 +152,11 @@ export function executeSyncOperations(operations: FileSyncOperation[]): void {
   for (const op of operations) {
     if (hasFileChanged(op.sourcePath, op.destPath)) {
       copyFileSync(op.sourcePath, op.destPath)
-      logger.success(`${op.relativeSourcePath || op.displaySource} -> ${op.relativeDestPath || op.processedDestination}`)
+      logger.success(
+        `${op.relativeSourcePath || op.displaySource} -> ${op.relativeDestPath || op.processedDestination}`,
+      )
     } else {
-      logger.info(`File unchanged, skipping: ${op.relativeDestPath || op.processedDestination}`)
+      // logger.info(`File unchanged, skipping: ${op.relativeDestPath || op.processedDestination}`)
     }
   }
 }
