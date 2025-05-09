@@ -100,9 +100,7 @@ export function hasFileChanged(sourcePath: string, destPath: string): boolean {
  * @returns The latest commit hash
  */
 export function getLatestCommitHash(repo: string, branch: string): string {
-  return execSync(`git ls-remote https://github.com/${repo}.git ${branch} | cut -f1`)
-    .toString()
-    .trim()
+  return execSync(`git ls-remote https://github.com/${repo}.git ${branch} | cut -f1`).toString().trim()
 }
 
 /**
@@ -129,7 +127,7 @@ export function downloadRepository(repo: string, branch: string): { tempDir: str
       } catch (e) {
         logger.warn(`Failed to clean up temporary directory: ${(e as Error).message}`)
       }
-    }
+    },
   }
 }
 
@@ -137,11 +135,11 @@ export function downloadRepository(repo: string, branch: string): { tempDir: str
  * Represents a file sync operation
  */
 export interface FileSyncOperation {
-  sourcePath: string;
-  destPath: string;
-  displaySource: string;
-  processedDestination: string;
-  repo: string;
+  sourcePath: string
+  destPath: string
+  displaySource: string
+  processedDestination: string
+  repo: string
 }
 
 /**
@@ -149,6 +147,7 @@ export interface FileSyncOperation {
  * @param operations Array of file sync operations
  */
 export function executeSyncOperations(operations: FileSyncOperation[]): void {
+  console.log('operations', operations)
   for (const op of operations) {
     if (hasFileChanged(op.sourcePath, op.destPath)) {
       logger.info(`File has changed, copying: ${op.processedDestination}`)
