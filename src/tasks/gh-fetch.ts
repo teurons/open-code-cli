@@ -14,6 +14,7 @@ import {
   downloadRepository,
   FileSyncOperation,
   executeSyncOperations,
+  FileSyncResult,
 } from '../utils/gh-fetch-utils'
 
 /**
@@ -59,6 +60,8 @@ export class GhFetchTask implements Task {
     validateReposConfiguration(repos as unknown[])
 
     const typedRepos = repos as unknown[]
+    const allResults: FileSyncResult[] = []
+    let allSuccess = true
 
     // Process each repository group directly
     for (const repoGroup of typedRepos) {
@@ -70,8 +73,18 @@ export class GhFetchTask implements Task {
       // Replace variables in repo name
       const processedRepo = context.replaceVariables(repo)
 
-      // Process this repository
-      await this.processRepo(processedRepo, files, cwd, sync, branch)
+      // Process this repository and collect results
+      const repoResult = await this.processRepo(processedRepo, files, cwd, sync, branch)
+      allResults.push(...repoResult.results)
+      if (!repoResult.success) {
+        allSuccess = false
+      }
+    }
+    
+    // Log overall summary
+    logger.info(`GitHub fetch completed with ${allResults.length} total files processed`)
+    if (!allSuccess) {
+      logger.warn('Some files had issues during sync. Check the logs for details.')
     }
   }
 
@@ -139,6 +152,7 @@ export class GhFetchTask implements Task {
    * @param cwd The current working directory
    * @param sync Whether to sync this repository (track commits and only fetch if there are changes)
    * @param branch Branch to fetch from
+   * @returns Object containing sync results and status
    */
   private async processRepo(
     repo: string,
@@ -146,7 +160,11 @@ export class GhFetchTask implements Task {
     cwd: string,
     sync = false,
     branch = 'main',
-  ): Promise<void> {
+  ): Promise<{
+    repo: string
+    results: FileSyncResult[]
+    success: boolean
+  }> {
     // Read tracker config once at the beginning
     const trackerConfig = readTrackerConfig(cwd)
     // Check if we need to sync by getting the latest commit hash
@@ -165,7 +183,11 @@ export class GhFetchTask implements Task {
 
         if (!shouldFetch) {
           logger.info(`Repository ${repo} is already up to date, skipping fetch`)
-          return
+          return {
+            repo,
+            results: [],
+            success: true
+          }
         }
 
         logger.info(`Updates found in repository ${repo}, proceeding with fetch`)
@@ -230,8 +252,29 @@ export class GhFetchTask implements Task {
         }
       }
 
-      // Execute all file sync operations in batch and get updated file data
-      fileData = executeSyncOperations(syncOperations, trackerConfig)
+      // Execute all file sync operations in batch and get updated file data and results
+      const syncResult = executeSyncOperations(syncOperations, trackerConfig)
+      fileData = syncResult.updatedFiles
+      
+      // Log summary of sync results
+      const successCount = syncResult.results.filter(r => r.syncResult.success).length
+      const failCount = syncResult.results.length - successCount
+      logger.info(`Sync summary: ${successCount} files synced successfully, ${failCount} files with issues`)
+      
+      // Return the results from this repo processing
+      return {
+        repo,
+        results: syncResult.results,
+        success: failCount === 0
+      }
+    } catch (error) {
+      // Handle any errors during processing
+      logger.error(`Error processing repository ${repo}: ${(error as Error).message}`)
+      return {
+        repo,
+        results: [],
+        success: false
+      }
     } finally {
       // Clean up temporary directory
       cleanup()
@@ -281,6 +324,14 @@ export class GhFetchTask implements Task {
 
         // Write the updated tracker config
         writeTrackerConfig(cwd, trackerConfig)
+      }
+      
+      // If we reached this point without returning, it means there were no operations
+      // Return an empty successful result
+      return {
+        repo,
+        results: [],
+        success: true
       }
     }
   }

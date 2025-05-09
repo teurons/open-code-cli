@@ -231,19 +231,38 @@ export interface FileSyncOperation {
 }
 
 /**
+ * Result of a file sync operation
+ */
+export interface FileSyncResult {
+  operation: FileSyncOperation
+  actionResult: FileActionResult
+  syncResult: {
+    success: boolean
+    message?: string
+    fileHash?: string
+    syncedAt?: string
+  }
+}
+
+/**
  * Executes a batch of file sync operations
  * @param operations Array of file sync operations
- * @param cwd Current working directory
- * @returns Object containing updated file hashes grouped by repository
+ * @param trackerConfig Tracker configuration for file hash tracking
+ * @returns Object containing updated file data and detailed results of each operation
  */
 export function executeSyncOperations(
   operations: FileSyncOperation[],
   trackerConfig: TrackerConfig,
-): Record<string, Record<string, { hash: string; syncedAt: string }>> {
+): {
+  updatedFiles: Record<string, Record<string, { hash: string; syncedAt: string }>>
+  results: FileSyncResult[]
+} {
   // Store updated file data by repository
   const updatedFiles: Record<string, Record<string, { hash: string; syncedAt: string }>> = {}
+  // Store detailed results of each operation
+  const results: FileSyncResult[] = []
 
-  // Process operations directly without grouping
+  // Process operations directly
   for (const op of operations) {
     if (!op.repo) {
       logger.warn(`Repository not specified for file: ${op.relativeSourcePath}`)
@@ -259,6 +278,15 @@ export function executeSyncOperations(
     const actionResult = actionOnFile(op.sourcePath, op.localPath, op.repo, op.relativeLocalPath, trackerConfig)
     const { action, sourceFileHash, localFileHash, trackerFileHash } = actionResult
 
+    // Create a result object for this operation
+    const result: FileSyncResult = {
+      operation: op,
+      actionResult,
+      syncResult: {
+        success: false
+      }
+    }
+
     logger.info(
       `Action for ${op.relativeLocalPath}: ${action} | ` +
       `Source: ${sourceFileHash.substring(0, 8)} | ` +
@@ -269,21 +297,43 @@ export function executeSyncOperations(
     // Process the file based on the determined action
     switch (action) {
       case FileAction.COPY:
-        // Source file has changed, safe to copy
-        copyFileSync(op.sourcePath, op.localPath)
-        // Calculate and store hash and syncedAt for the updated file
-        const fileHash = getFileHash(op.localPath)
-        const now = new Date().toISOString()
-        // We've already checked that updatedFiles[op.repo] exists above
-        updatedFiles[op.repo]![op.relativeLocalPath] = {
-          hash: fileHash,
-          syncedAt: now
+        try {
+          // Source file has changed, safe to copy
+          copyFileSync(op.sourcePath, op.localPath)
+          // Calculate and store hash and syncedAt for the updated file
+          const fileHash = getFileHash(op.localPath)
+          const now = new Date().toISOString()
+          
+          // Update the files object
+          updatedFiles[op.repo]![op.relativeLocalPath] = {
+            hash: fileHash,
+            syncedAt: now
+          }
+          
+          // Update result
+          result.syncResult = {
+            success: true,
+            fileHash,
+            syncedAt: now,
+            message: `Copied successfully`
+          }
+          
+          logger.success(`${op.relativeSourcePath} -> ${op.relativeLocalPath}`)
+        } catch (error) {
+          result.syncResult = {
+            success: false,
+            message: `Failed to copy: ${(error as Error).message}`
+          }
+          logger.error(`Failed to copy ${op.relativeSourcePath}: ${(error as Error).message}`)
         }
-        logger.success(`${op.relativeSourcePath} -> ${op.relativeLocalPath}`)
         break
 
       case FileAction.MERGE:
         // Both source and local file have changed, need AI merge
+        result.syncResult = {
+          success: false,
+          message: `Needs manual merge`
+        }
         logger.warn(
           `Both remote and local changes detected for ${op.relativeSourcePath}. Consider using ai_merge_file task.`,
         )
@@ -292,12 +342,19 @@ export function executeSyncOperations(
       case FileAction.NONE:
       default:
         // No changes or only local changes, skip
+        result.syncResult = {
+          success: true,
+          message: `No changes needed`
+        }
         logger.debug(`File unchanged or only local changes, skipping: ${op.relativeLocalPath}`)
         break
     }
+    
+    // Add the result to our results array
+    results.push(result)
   }
 
-  return updatedFiles
+  return { updatedFiles, results }
 }
 
 /**
