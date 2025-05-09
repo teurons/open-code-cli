@@ -2,7 +2,7 @@ import { Task, TaskContext } from './types'
 import { TaskConfig as CommonTaskConfig } from '../types/common'
 import { logger } from '../logger'
 import { context } from '../context'
-import { existsSync, mkdirSync, statSync, readdirSync } from 'fs'
+import { existsSync, mkdirSync, statSync } from 'fs'
 import { dirname, join, normalize, relative } from 'path'
 import { readTrackerConfig, writeTrackerConfig } from '../utils/tracker'
 import {
@@ -15,6 +15,9 @@ import {
   FileSyncOperation,
   executeSyncOperations,
   FileSyncResult,
+  generateSyncSummary,
+  logSyncSummary,
+  syncDirectoryChanges,
 } from '../utils/gh-fetch-utils'
 
 /**
@@ -61,7 +64,6 @@ export class GhFetchTask implements Task {
 
     const typedRepos = repos as unknown[]
     const allResults: FileSyncResult[] = []
-    let allSuccess = true
 
     // Process each repository group directly
     for (const repoGroup of typedRepos) {
@@ -76,74 +78,17 @@ export class GhFetchTask implements Task {
       // Process this repository and collect results
       const repoResult = await this.processRepo(processedRepo, files, cwd, sync, branch)
       allResults.push(...repoResult.results)
-      if (!repoResult.success) {
-        allSuccess = false
-      }
     }
     
-    // Log overall summary
+    // Generate and log overall summary
+    const overallSummary = generateSyncSummary(allResults)
     logger.info(`GitHub fetch completed with ${allResults.length} total files processed`)
-    if (!allSuccess) {
-      logger.warn('Some files had issues during sync. Check the logs for details.')
-    }
+    logSyncSummary(overallSummary, false)
   }
 
   // Using imported utility functions directly
 
-  /**
-   * Sync directory changes by collecting file operations
-   * @param sourceDir Source directory path (absolute path)
-   * @param localDir Local directory path (absolute path)
-   * @param syncOps Array to collect sync operations
-   * @param tempDir Temporary directory path (absolute path, optional)
-   * @param cwd Current working directory (absolute path, optional)
-   * @param repo Repository name (optional)
-   */
-  private syncDirectoryChanges(
-    sourceDir: string,
-    localDir: string,
-    syncOps: FileSyncOperation[],
-    tempDir?: string,
-    cwd?: string,
-    repo?: string,
-  ): void {
-    // Create local directory if needed
-    if (!existsSync(localDir)) {
-      mkdirSync(localDir, { recursive: true })
-    }
-
-    try {
-      // Process each entry in the directory
-      readdirSync(sourceDir, { withFileTypes: true }).forEach((entry) => {
-        const sourcePath = join(sourceDir, entry.name)
-        const localPath = join(localDir, entry.name)
-
-        if (entry.isDirectory()) {
-          // Create subdirectory if it doesn't exist
-          if (!existsSync(localPath)) {
-            mkdirSync(localPath, { recursive: true })
-          }
-
-          // Recursively sync subdirectory
-          this.syncDirectoryChanges(sourcePath, localPath, syncOps, tempDir, cwd, repo)
-        } else {
-          // Add file to sync operations
-          const relativeSourcePath = tempDir ? relative(tempDir, sourcePath) : sourcePath
-          const relativeLocalPath = cwd ? relative(cwd, localPath) : localPath
-
-          syncOps.push({
-            sourcePath,
-            localPath,
-            repo: repo || '',
-            relativeSourcePath,
-            relativeLocalPath,
-          })
-        }
-      })
-    } catch (e) {
-      logger.warn(`Error syncing directory ${sourceDir}: ${(e as Error).message}`)
-    }
-  }
+  // Using imported utility functions for directory synchronization
 
   /**
    * Process a repository by downloading it once and extracting all files
@@ -245,7 +190,7 @@ export class GhFetchTask implements Task {
           // Process based on whether it's a file or directory
           const stats = statSync(sourcePath)
           stats.isDirectory()
-            ? this.syncDirectoryChanges(sourcePath, localPath, syncOperations, tempDir, cwd, repo)
+            ? syncDirectoryChanges(sourcePath, localPath, syncOperations, tempDir, cwd, repo)
             : processFile()
         } catch (e) {
           throw new Error(`Failed to process from ${repo}/${normalizedSource} (relative path): ${(e as Error).message}`)
@@ -256,16 +201,15 @@ export class GhFetchTask implements Task {
       const syncResult = executeSyncOperations(syncOperations, trackerConfig)
       fileData = syncResult.updatedFiles
       
-      // Log summary of sync results
-      const successCount = syncResult.results.filter(r => r.syncResult.success).length
-      const failCount = syncResult.results.length - successCount
-      logger.info(`Sync summary: ${successCount} files synced successfully, ${failCount} files with issues`)
+      // Generate and log repository-level summary
+      const repoSummary = generateSyncSummary(syncResult.results)
+      logSyncSummary(repoSummary, true, repo)
       
       // Return the results from this repo processing
       return {
         repo,
         results: syncResult.results,
-        success: failCount === 0
+        success: repoSummary.failCount === 0
       }
     } catch (error) {
       // Handle any errors during processing

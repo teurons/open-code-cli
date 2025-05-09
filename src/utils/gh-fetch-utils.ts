@@ -1,10 +1,10 @@
 import { createHash } from 'crypto'
-import { existsSync, readFileSync, mkdirSync, copyFileSync } from 'fs'
+import { existsSync, readFileSync, mkdirSync, copyFileSync, readdirSync } from 'fs'
 import { logger } from '../logger'
 import { context } from '../context'
 import { TaskConfig as CommonTaskConfig } from '../types/common'
 import { execSync } from 'child_process'
-import { join } from 'path'
+import { join, relative } from 'path'
 import { tmpdir } from 'os'
 import { randomUUID } from 'crypto'
 import { TrackerConfig } from './tracker'
@@ -245,6 +245,28 @@ export interface FileSyncResult {
 }
 
 /**
+ * Summary of sync operations
+ */
+export interface SyncSummary {
+  totalFiles: number
+  successCount: number
+  failCount: number
+  copyCount: number
+  noneCount: number
+  mergeCount: number
+  failedFiles: FileSyncResult[]
+}
+
+/**
+ * Result of processing a repository
+ */
+export interface RepoProcessResult {
+  repo: string
+  results: FileSyncResult[]
+  success: boolean
+}
+
+/**
  * Executes a batch of file sync operations
  * @param operations Array of file sync operations
  * @param trackerConfig Tracker configuration for file hash tracking
@@ -355,6 +377,106 @@ export function executeSyncOperations(
   }
 
   return { updatedFiles, results }
+}
+
+/**
+ * Generate a summary of sync operations
+ * @param results Array of sync results
+ * @returns Summary object with counts and details
+ */
+export function generateSyncSummary(results: FileSyncResult[]): SyncSummary {
+  const successCount = results.filter(r => r.syncResult.success).length
+  const failCount = results.length - successCount
+  const copyCount = results.filter(r => r.actionResult.action === FileAction.COPY).length
+  const noneCount = results.filter(r => r.actionResult.action === FileAction.NONE).length
+  const mergeCount = results.filter(r => r.actionResult.action === FileAction.MERGE).length
+  const failedFiles = results.filter(r => !r.syncResult.success)
+
+  return {
+    totalFiles: results.length,
+    successCount,
+    failCount,
+    copyCount,
+    noneCount,
+    mergeCount,
+    failedFiles
+  }
+}
+
+/**
+ * Log a summary of sync operations
+ * @param summary Summary object
+ * @param isRepoLevel Whether this is a repository-level summary (true) or overall summary (false)
+ * @param repoName Optional repository name for repo-level summaries
+ */
+export function logSyncSummary(summary: SyncSummary, isRepoLevel: boolean = false, repoName?: string): void {
+  const scope = isRepoLevel && repoName ? `Repository ${repoName}` : 'Overall';
+  
+  logger.info(`${scope} sync summary: ${summary.successCount} files synced successfully, ${summary.failCount} files with issues`)
+  logger.info(`${scope} action breakdown: ${summary.copyCount} copied, ${summary.noneCount} unchanged, ${summary.mergeCount} need merge`)
+  
+  if (summary.failCount > 0) {
+    logger.warn(`${isRepoLevel ? 'Files' : 'Files across all repositories'} with issues:`)
+    summary.failedFiles.forEach(r => {
+      const path = isRepoLevel ? r.operation.relativeLocalPath : `${r.operation.repo}/${r.operation.relativeLocalPath}`
+      logger.warn(`- ${path}: ${r.actionResult.action} - ${r.syncResult.message}`)
+    })
+  }
+}
+
+/**
+ * Synchronize a directory by collecting file operations
+ * @param sourceDir Source directory path (absolute path)
+ * @param localDir Local directory path (absolute path)
+ * @param syncOps Array to collect sync operations
+ * @param tempDir Temporary directory path (absolute path, optional)
+ * @param cwd Current working directory (absolute path, optional)
+ * @param repo Repository name (optional)
+ */
+export function syncDirectoryChanges(
+  sourceDir: string,
+  localDir: string,
+  syncOps: FileSyncOperation[],
+  tempDir?: string,
+  cwd?: string,
+  repo?: string,
+): void {
+  // Create local directory if needed
+  if (!existsSync(localDir)) {
+    mkdirSync(localDir, { recursive: true })
+  }
+
+  try {
+    // Process each entry in the directory
+    readdirSync(sourceDir, { withFileTypes: true }).forEach((entry) => {
+      const sourcePath = join(sourceDir, entry.name)
+      const localPath = join(localDir, entry.name)
+
+      if (entry.isDirectory()) {
+        // Create subdirectory if it doesn't exist
+        if (!existsSync(localPath)) {
+          mkdirSync(localPath, { recursive: true })
+        }
+
+        // Recursively sync subdirectory
+        syncDirectoryChanges(sourcePath, localPath, syncOps, tempDir, cwd, repo)
+      } else {
+        // Add file to sync operations
+        const relativeSourcePath = tempDir ? relative(tempDir, sourcePath) : sourcePath
+        const relativeLocalPath = cwd ? relative(cwd, localPath) : localPath
+
+        syncOps.push({
+          sourcePath,
+          localPath,
+          repo: repo || '',
+          relativeSourcePath,
+          relativeLocalPath,
+        })
+      }
+    })
+  } catch (error) {
+    throw new Error(`Failed to sync directory ${sourceDir}: ${(error as Error).message}`)
+  }
 }
 
 /**
