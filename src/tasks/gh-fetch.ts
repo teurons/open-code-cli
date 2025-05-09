@@ -4,7 +4,7 @@ import { logger } from '../logger'
 import { context } from '../context'
 import { existsSync, mkdirSync, statSync, readdirSync } from 'fs'
 import { dirname, join, normalize, relative } from 'path'
-import { needsSync, updateRepoSyncData, readTrackerConfig, writeTrackerConfig } from '../utils/tracker'
+import { readTrackerConfig, writeTrackerConfig } from '../utils/tracker'
 import {
   validateDependencies,
   validateReposConfiguration,
@@ -49,7 +49,7 @@ export class GhFetchTask implements Task {
   public async execute(taskContext: TaskContext): Promise<void> {
     const { repos, depends } = taskContext.config
     const { cwd } = taskContext
-    
+
     // Initialize tracker file if it doesn't exist
     const trackerConfig = readTrackerConfig(cwd)
     writeTrackerConfig(cwd, trackerConfig)
@@ -238,25 +238,27 @@ export class GhFetchTask implements Task {
 
       // Update sync data if sync is enabled and we have a commit hash
       if (sync && latestCommitHash) {
-        // First update repo sync data with the latest commit hash
-        updateRepoSyncData(cwd, repo, branch, latestCommitHash)
-        logger.info(`Updated sync data for repository ${repo}`)
+        logger.info(`Updating sync data for repository ${repo}`)
+        
+        // Update the tracker config we already have
 
-        // Get the current tracker config
-        const trackerConfig = readTrackerConfig(cwd)
-
+        // Make sure the repo entry exists with updated commit hash
+        if (!trackerConfig.repos[repo]) {
+          trackerConfig.repos[repo] = {
+            repo,
+            branch,
+            lastCommitHash: latestCommitHash,
+            syncedAt: new Date().toISOString(),
+            files: {},
+          }
+        } else {
+          // Update the commit hash and synced time
+          trackerConfig.repos[repo].lastCommitHash = latestCommitHash;
+          trackerConfig.repos[repo].syncedAt = new Date().toISOString();
+        }
+        
         // If we have updated file data from sync operations, update them in the tracker
         if (fileData[repo] && Object.keys(fileData[repo]).length > 0) {
-          // Make sure the repo entry exists
-          if (!trackerConfig.repos[repo]) {
-            trackerConfig.repos[repo] = {
-              repo,
-              branch,
-              lastCommitHash: latestCommitHash,
-              syncedAt: new Date().toISOString(),
-              files: {},
-            }
-          }
 
           // Update file data in the tracker config
           for (const [filePath, fileInfo] of Object.entries(fileData[repo] || {})) {
