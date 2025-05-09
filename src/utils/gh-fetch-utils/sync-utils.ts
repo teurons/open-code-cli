@@ -1,8 +1,10 @@
-import { copyFileSync } from 'fs'
+import { copyFileSync, writeFileSync, readFileSync, unlinkSync } from 'fs'
 import { logger } from '../../logger'
 import { TrackerConfig } from '../tracker'
 import { FileAction, FileSyncOperation, FileSyncResult, SyncSummary } from './types'
 import { actionOnFile, getFileHash } from './file-utils'
+import { aiMerge } from '../ai-utils'
+import { getOpenRouterApiKey, getOpenRouterModel } from '../config'
 
 /**
  * Executes a batch of file sync operations
@@ -10,13 +12,13 @@ import { actionOnFile, getFileHash } from './file-utils'
  * @param trackerConfig Tracker configuration for file hash tracking
  * @returns Object containing updated file data and detailed results of each operation
  */
-export function executeSyncOperations(
+export async function executeSyncOperations(
   operations: FileSyncOperation[],
   trackerConfig: TrackerConfig,
-): {
+): Promise<{
   updatedFiles: Record<string, Record<string, { hash: string; syncedAt: string }>>
   results: FileSyncResult[]
-} {
+}> {
   const results: FileSyncResult[] = []
   const updatedFiles: Record<string, Record<string, { hash: string; syncedAt: string }>> = {}
 
@@ -73,9 +75,59 @@ export function executeSyncOperations(
           break
 
         case FileAction.MERGE:
-          // Need to merge changes
-          syncResult.success = false
-          syncResult.message = 'Manual merge required (both source and local have changed)'
+          try {
+            logger.info(`Attempting AI merge for ${localPath}`)
+            
+            // Get model and API key from configuration
+            const model = getOpenRouterModel()
+            const apiKey = getOpenRouterApiKey()
+            
+            if (!model || !apiKey) {
+              syncResult.success = false
+              syncResult.message = 'AI merge failed: OpenRouter configuration not found. Run init-open-router command first.'
+              break
+            }
+            
+            // Read source and local file contents
+            const sourceContent = readFileSync(sourcePath, 'utf-8')
+            const localContent = readFileSync(localPath, 'utf-8')
+            
+            // Use AI to merge the files
+            const mergedContent = await aiMerge(localContent, sourceContent, model, apiKey)
+            
+            if (!mergedContent) {
+              syncResult.success = false
+              syncResult.message = 'AI merge failed: Could not generate merged content'
+              break
+            }
+            
+            // Create a temporary backup of the local file
+            const backupPath = `${localPath}.backup-${new Date().getTime()}`
+            copyFileSync(localPath, backupPath)
+            logger.info(`Created backup of local file at ${backupPath}`)
+            
+            // Write the merged content to the local file
+            writeFileSync(localPath, mergedContent)
+            syncResult.success = true
+            syncResult.fileHash = getFileHash(localPath)
+            syncResult.message = 'Files merged successfully using AI'
+            
+            // Remove the backup file after successful merge
+            try {
+              unlinkSync(backupPath)
+            } catch (e) {
+              logger.warn(`Failed to remove backup file ${backupPath}: ${(e as Error).message}`)
+            }
+            
+            // Update file data for tracking
+            updatedFiles[repo][relativeLocalPath] = {
+              hash: syncResult.fileHash,
+              syncedAt: syncResult.syncedAt,
+            }
+          } catch (e) {
+            syncResult.success = false
+            syncResult.message = `AI merge failed: ${(e as Error).message}`
+          }
           break
 
         default:
