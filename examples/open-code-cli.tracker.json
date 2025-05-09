@@ -3,8 +3,126 @@
     "locospec/locospec-laravel": {
       "repo": "locospec/locospec-laravel",
       "branch": "main",
-      "lastCommitHash": "2f2737d7395554012914ec7bdb201e1386bd50f6",
-      "lastSyncedAt": "2025-05-09T06:35:56.502Z"
+      "lastCommitHash": "8cb1a75c12f56ae04f59d96cf0956a6ed04f6caf",
+      "lastSyncedAt": "2025-05-09T08:04:18.233Z",
+      "files": {
+        "locospec-laravel/CHANGELOG.md": {
+          "hash": "101f496338b4c9c8838aa54fd8994151",
+          "lastSyncedAt": "2025-05-09T07:51:23.178Z"
+        },
+        "locospec-laravel/LICENSE.md": {
+          "hash": "cc739d0f069204c1546dc5f44695e910",
+          "lastSyncedAt": "2025-05-09T07:51:23.178Z"
+        },
+        "locospec-laravel/README.md": {
+          "hash": "8329f27675a512cf139b2c8a531dcc51",
+          "lastSyncedAt": "2025-05-09T08:03:54.756Z"
+        },
+        "locospec-laravel/c2p/.gitignore": {
+          "hash": "4954fe3f439337e5535185debf8fb3dd",
+          "lastSyncedAt": "2025-05-09T07:51:23.178Z"
+        },
+        "locospec-laravel/composer.json": {
+          "hash": "f7107d1b31105456effc4024342fc11e",
+          "lastSyncedAt": "2025-05-09T07:51:23.178Z"
+        },
+        "locospec-laravel/config/locospec-laravel.php": {
+          "hash": "72c2531d8963b4d2628d4c7b6448a21e",
+          "lastSyncedAt": "2025-05-09T07:51:23.178Z"
+        },
+        "locospec-laravel/database/factories/ModelFactory.php": {
+          "hash": "0e51c6c78e0f5c8af75047518c92dca9",
+          "lastSyncedAt": "2025-05-09T07:51:23.178Z"
+        },
+        "locospec-laravel/database/migrations/create_locospec_laravel_table.php.stub": {
+          "hash": "8f2088ea28eac95068e0072c054a6934",
+          "lastSyncedAt": "2025-05-09T07:51:23.178Z"
+        },
+        "locospec-laravel/resources/views/.gitkeep": {
+          "hash": "d41d8cd98f00b204e9800998ecf8427e",
+          "lastSyncedAt": "2025-05-09T07:51:23.178Z"
+        },
+        "locospec-laravel/src/Commands/LLCSCommand.php": {
+          "hash": "92c7c4a006646983856b8cb7e19c47c7",
+          "lastSyncedAt": "2025-05-09T07:51:23.178Z"
+        },
+        "locospec-laravel/src/Database/Contracts/OperationHandlerInterface.php": {
+          "hash": "d86892976e9c29775f89d79bbf4c1a5c",
+          "lastSyncedAt": "2025-05-09T07:51:23.178Z"
+        },
+        "locospec-laravel/src/Database/DatabaseOperator.php": {
+          "hash": "61aee77f48d4fbd68e92d81165de6237",
+          "lastSyncedAt": "2025-05-09T07:51:23.178Z"
+        },
+        "locospec-laravel/src/Database/Handlers/DeleteOperationHandler.php": {
+          "hash": "447c50070c526e34e35f47691d29f8e6",
+          "lastSyncedAt": "2025-05-09T07:51:23.178Z"
+        },
+        "locospec-laravel/src/Database/Handlers/InsertOperationHandler.php": {
+          "hash": "2a084e0587f1e12e32774e4c698aa804",
+          "lastSyncedAt": "2025-05-09T07:51:23.178Z"
+        },
+        "locospec-laravel/src/Database/Handlers/SelectOperationHandler.php": {
+          "hash": "9c443bdb126a325aa1ca3688670614bb",
+          "lastSyncedAt": "2025-05-09T07:51:23.178Z"
+        },
+        "locospec-laravel/src/Database/Handlers/UpdateOperationHandler.php": {
+          "hash": "a8192d1c44a4888129afe31c0c1a2bb2",
+          "lastSyncedAt": "2025-05-09T07:51:23.178Z"
+        },
+        "locospec-laravel/src/Database/Query/JsonPathHandler.php": {
+          "hash": "b09e5dba9827b920c16c500cfc7c1aa2",
+          "lastSyncedAt": "2025-05-09T07:51:23.178Z"
+        },
+        "locospec-laravel/src/Database/Query/QueryResultFormatter.php": {
+          "hash": "f9f288f838d94c0b624c87217e82167d",
+          "lastSyncedAt": "2025-05-09T07:51:23.178Z"
+        },
+        "locospec-laravel/src/Database/Query/WhereExpressionBuilder.php": {
+          "hash": "8a10ff489288778519121bbd5e736be5",
+          "lastSyncedAt": "2025-05-09T07:51:23.178Z"
+        },
+        "locospec-laravel/src/Facades/LLCS.php": {
+          "hash": "77175415701bb944b01a25892fa02e02",
+          "lastSyncedAt": "2025-05-09T07:51:23.178Z"
+        },
+        "locospec-laravel/src/Generators/DefaultGenerator.php": {
+          "hash": "b9a465e39e5012fc09c041698e5208c4",
+          "lastSyncedAt": "2025-05-09T07:51:23.178Z"
+        },
+        "locospec-laravel/src/Http/Controllers/ModelActionController.php": {
+          "hash": "761757c60b16589141938198e5b620c1",
+          "lastSyncedAt": "2025-05-09T07:51:23.178Z"
+        },
+        "locospec-laravel/src/LLCS.php": {
+          "hash": "aee48e15ec984578530b7abaae9d40df",
+          "lastSyncedAt": "2025-05-09T07:51:23.178Z"
+        },
+        "locospec-laravel/src/LLCSServiceProvider.php": {
+          "hash": "43e5c0912cb0f500d042eb28177f71ab",
+          "lastSyncedAt": "2025-05-09T07:51:23.178Z"
+        },
+        "locospec-laravel/src/Validations/DefaultValidator.php": {
+          "hash": "97e20cec3c24cf2a0dba3d4e6d90e5b9",
+          "lastSyncedAt": "2025-05-09T07:51:23.178Z"
+        }
+      }
+    },
+    "rjvim/test-open-code-cli": {
+      "repo": "rjvim/test-open-code-cli",
+      "branch": "main",
+      "lastCommitHash": "11e846c43d4fc2070b38d5d0deb55a2a8fa59cf1",
+      "lastSyncedAt": "2025-05-09T08:04:20.031Z",
+      "files": {
+        "test-open-code-cli/LICENSE": {
+          "hash": "fa4ac20ca1a61a009dde024fea7c8bf5",
+          "lastSyncedAt": "2025-05-09T07:55:53.298Z"
+        },
+        "test-open-code-cli/README.md": {
+          "hash": "99671104f3f62109a0ad862e60d3ec84",
+          "lastSyncedAt": "2025-05-09T07:58:45.005Z"
+        }
+      }
     }
   }
 }

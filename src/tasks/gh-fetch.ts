@@ -4,7 +4,7 @@ import { logger } from '../logger'
 import { context } from '../context'
 import { existsSync, mkdirSync, statSync, readdirSync } from 'fs'
 import { dirname, join, normalize, relative } from 'path'
-import { needsSync, updateRepoSyncData } from '../utils/tracker'
+import { needsSync, updateRepoSyncData, readTrackerConfig, writeTrackerConfig } from '../utils/tracker'
 import {
   validateDependencies,
   validateReposConfiguration,
@@ -20,10 +20,10 @@ import {
  * Represents a file or directory to be fetched from a GitHub repository
  */
 interface FetchFile {
-  /** Source path within the repository */
+  /** Source path within the repository (relative path) */
   source: string
-  /** Destination path on the local filesystem */
-  destination: string
+  /** Local path on the filesystem (relative path) */
+  local: string
 }
 
 /**
@@ -41,6 +41,7 @@ interface RepoGroup {
 }
 
 export class GhFetchTask implements Task {
+  // updateDirectoryFileHashes method removed as it's no longer needed
   /**
    * Execute the GitHub fetch task
    * @param taskContext The task context containing configuration and working directory
@@ -74,38 +75,51 @@ export class GhFetchTask implements Task {
 
   /**
    * Sync directory changes by collecting file operations
-   * @param sourceDir Source directory path
-   * @param destDir Destination directory path
+   * @param sourceDir Source directory path (absolute path)
+   * @param localDir Local directory path (absolute path)
    * @param syncOps Array to collect sync operations
+   * @param tempDir Temporary directory path (absolute path, optional)
+   * @param cwd Current working directory (absolute path, optional)
+   * @param repo Repository name (optional)
    */
-  private syncDirectoryChanges(sourceDir: string, destDir: string, syncOps: FileSyncOperation[], tempDir?: string, cwd?: string): void {
-    // Create destination directory if needed
-    if (!existsSync(destDir)) {
-      mkdirSync(destDir, { recursive: true })
+  private syncDirectoryChanges(
+    sourceDir: string,
+    localDir: string,
+    syncOps: FileSyncOperation[],
+    tempDir?: string,
+    cwd?: string,
+    repo?: string,
+  ): void {
+    // Create local directory if needed
+    if (!existsSync(localDir)) {
+      mkdirSync(localDir, { recursive: true })
     }
 
     try {
       // Process each entry in the directory
-      readdirSync(sourceDir, { withFileTypes: true }).forEach(entry => {
+      readdirSync(sourceDir, { withFileTypes: true }).forEach((entry) => {
         const sourcePath = join(sourceDir, entry.name)
-        const destPath = join(destDir, entry.name)
+        const localPath = join(localDir, entry.name)
 
         if (entry.isDirectory()) {
-          // Recursively process subdirectory
-          this.syncDirectoryChanges(sourcePath, destPath, syncOps, tempDir, cwd)
+          // Create subdirectory if it doesn't exist
+          if (!existsSync(localPath)) {
+            mkdirSync(localPath, { recursive: true })
+          }
+
+          // Recursively sync subdirectory
+          this.syncDirectoryChanges(sourcePath, localPath, syncOps, tempDir, cwd, repo)
         } else {
           // Add file to sync operations
-          const relativeSourcePath = tempDir ? relative(tempDir, sourcePath) : relative(sourceDir, sourcePath)
-          const relativeDestPath = cwd ? relative(cwd, destPath) : relative(destDir, destPath)
-          
+          const relativeSourcePath = tempDir ? relative(tempDir, sourcePath) : sourcePath
+          const relativeLocalPath = cwd ? relative(cwd, localPath) : localPath
+
           syncOps.push({
             sourcePath,
-            destPath,
-            displaySource: relative(sourceDir, sourcePath),
-            processedDestination: destPath,
-            repo: '',
+            localPath,
+            repo: repo || '',
             relativeSourcePath,
-            relativeDestPath
+            relativeLocalPath,
           })
         }
       })
@@ -140,7 +154,8 @@ export class GhFetchTask implements Task {
         latestCommitHash = getLatestCommitHash(repo, branch)
 
         // Check if we need to sync
-        shouldFetch = needsSync(cwd, repo, branch, latestCommitHash)
+        // shouldFetch = needsSync(cwd, repo, branch, latestCommitHash)
+        shouldFetch = true
 
         if (!shouldFetch) {
           logger.info(`Repository ${repo} is already up to date, skipping fetch`)
@@ -159,65 +174,104 @@ export class GhFetchTask implements Task {
     // Download the repository and get cleanup function
     const { tempDir, cleanup } = downloadRepository(repo, branch)
 
+    // Variable to store file hashes from sync operations
+    let fileHashes: Record<string, Record<string, string>> = {}
+
     try {
       // Collect file sync operations
       const syncOperations: FileSyncOperation[] = []
 
       // Process each file in the repository
       for (const file of files) {
-        const { source, destination } = file
+        const { source, local } = file
 
         // Replace variables in paths
         const processedSource = context.replaceVariables(source)
-        const processedDestination = context.replaceVariables(destination)
+        const processedLocal = context.replaceVariables(local)
 
         // Create clean paths for source and destination
         const normalizedSource = normalize(processedSource).replace(/^\/+/, '')
         const sourcePath = join(tempDir, normalizedSource)
-        const destPath = join(cwd, processedDestination)
-        
-        // Ensure destination directory exists
-        const destDir = dirname(destPath)
-        if (!existsSync(destDir)) {
-          mkdirSync(destDir, { recursive: true })
+        const localPath = join(cwd, processedLocal)
+
+        // Ensure local directory exists
+        const localDir = dirname(localPath)
+        if (!existsSync(localDir)) {
+          mkdirSync(localDir, { recursive: true })
         }
-        
+
         try {
           const processFile = () => {
             const relativeSourcePath = relative(tempDir, sourcePath)
-            const relativeDestPath = relative(cwd, destPath)
-            
+            const relativeLocalPath = relative(cwd, localPath)
+
             syncOperations.push({
               sourcePath,
-              destPath,
-              displaySource: normalizedSource === '' ? '/' : normalizedSource,
-              processedDestination,
+              localPath,
               repo,
               relativeSourcePath,
-              relativeDestPath
+              relativeLocalPath,
             })
           }
-          
+
           // Process based on whether it's a file or directory
           const stats = statSync(sourcePath)
-          stats.isDirectory() 
-            ? this.syncDirectoryChanges(sourcePath, destPath, syncOperations, tempDir, cwd)
+          stats.isDirectory()
+            ? this.syncDirectoryChanges(sourcePath, localPath, syncOperations, tempDir, cwd, repo)
             : processFile()
         } catch (e) {
-          throw new Error(`Failed to process from ${repo}/${normalizedSource}: ${(e as Error).message}`)
+          throw new Error(`Failed to process from ${repo}/${normalizedSource} (relative path): ${(e as Error).message}`)
         }
       }
 
-      // Execute all file sync operations in batch
-      executeSyncOperations(syncOperations)
+      // Execute all file sync operations in batch and get updated file hashes
+      fileHashes = executeSyncOperations(syncOperations, cwd)
     } finally {
       // Clean up temporary directory
       cleanup()
 
       // Update sync data if sync is enabled and we have a commit hash
       if (sync && latestCommitHash) {
+        // First update repo sync data with the latest commit hash
         updateRepoSyncData(cwd, repo, branch, latestCommitHash)
         logger.info(`Updated sync data for repository ${repo}`)
+
+        // Get the current tracker config
+        const trackerConfig = readTrackerConfig(cwd)
+
+        // If we have updated file hashes from sync operations, update them in the tracker
+        if (fileHashes[repo] && Object.keys(fileHashes[repo]).length > 0) {
+          // Make sure the repo entry exists
+          if (!trackerConfig.repos[repo]) {
+            trackerConfig.repos[repo] = {
+              repo,
+              branch,
+              lastCommitHash: latestCommitHash,
+              lastSyncedAt: new Date().toISOString(),
+              files: {},
+            }
+          }
+
+          // Update file hashes in the tracker config
+          const now = new Date().toISOString()
+          for (const [filePath, fileHash] of Object.entries(fileHashes[repo]) as [string, string][]) {
+            trackerConfig.repos[repo].files[filePath] = {
+              hash: fileHash,
+              lastSyncedAt: now,
+            }
+          }
+
+          // Remove any existing redundant path properties
+          for (const filePath in trackerConfig.repos[repo].files) {
+            const fileData = trackerConfig.repos[repo].files[filePath] as any
+            if (fileData && fileData.path) {
+              delete fileData.path
+            }
+          }
+        }
+
+        // Write the updated tracker config
+        writeTrackerConfig(cwd, trackerConfig)
       }
     }
   }

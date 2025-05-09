@@ -7,6 +7,7 @@ import { execSync } from 'child_process'
 import { join } from 'path'
 import { tmpdir } from 'os'
 import { randomUUID } from 'crypto'
+import { getLastSyncedFileHash } from './tracker'
 
 /**
  * Validates dependencies in the task configuration
@@ -75,22 +76,109 @@ export function getFileHash(filePath: string): string {
 }
 
 /**
- * Check if a file has changed by comparing hashes
- * @param sourcePath Source file path
- * @param destPath Destination file path
- * @returns True if the file has changed or destination doesn't exist
+ * Enum representing possible actions to take on a file during sync
  */
-export function hasFileChanged(sourcePath: string, destPath: string): boolean {
-  // If destination doesn't exist, it has changed
-  if (!existsSync(destPath)) {
-    return true
+export enum FileAction {
+  COPY = 'copy', // Copy from source to local (only source changed)
+  NONE = 'none', // No action needed (no changes or only local changes)
+  MERGE = 'merge', // Need to merge changes (both source and local changed)
+}
+
+/**
+ * Result object from actionOnFile function
+ */
+export interface FileActionResult {
+  action: FileAction
+  sourceFileHash: string
+  localFileHash: string
+  trackerFileHash: string | null
+}
+
+/**
+ * Determine what action should be taken for a file during sync
+ * @param sourcePath Source file path
+ * @param localPath Local file path
+ * @param repo Repository name
+ * @param relativeFilePath Relative file path for tracking
+ * @param cwd Current working directory
+ * @returns Object containing the action to take and all relevant file hashes
+ */
+export function actionOnFile(
+  sourcePath: string,
+  localPath: string,
+  repo: string,
+  relativeFilePath: string,
+  cwd: string,
+): FileActionResult {
+  // If local file doesn't exist, we need to copy it
+  if (!existsSync(localPath)) {
+    return {
+      action: FileAction.COPY,
+      sourceFileHash: getFileHash(sourcePath),
+      localFileHash: '',
+      trackerFileHash: null
+    }
   }
 
-  // Compare file hashes
-  const sourceHash = getFileHash(sourcePath)
-  const destHash = getFileHash(destPath)
+  // 1. Calculate hash of sourceFile - sourceFileHash
+  const sourceFileHash = getFileHash(sourcePath)
 
-  return sourceHash !== destHash
+  // 2. Calculate currentHash of localFile - localFileHash
+  const localFileHash = getFileHash(localPath)
+
+  // 3. Get hash of localFile from tracker - localFileHashFromTracker
+  const trackerFileHash = getLastSyncedFileHash(cwd, repo, relativeFilePath)
+
+  if (!trackerFileHash) {
+    // First time syncing this file
+    return {
+      action: FileAction.COPY,
+      sourceFileHash,
+      localFileHash,
+      trackerFileHash
+    }
+  }
+
+  // If localFileHash === trackerFileHash && localFileHash !== sourceFileHash
+  // Then copy the file, it means only sourceFile changes, but localFile didn't change.
+  if (localFileHash === trackerFileHash && localFileHash !== sourceFileHash) {
+    return {
+      action: FileAction.COPY,
+      sourceFileHash,
+      localFileHash,
+      trackerFileHash
+    }
+  }
+
+  // If localFileHash !== trackerFileHash && trackerFileHash === sourceFileHash
+  // It means file changed only in local, we needn't do anything
+  if (localFileHash !== trackerFileHash && trackerFileHash === sourceFileHash) {
+    return {
+      action: FileAction.NONE,
+      sourceFileHash,
+      localFileHash,
+      trackerFileHash
+    }
+  }
+
+  // If localFileHash !== trackerFileHash && localFileHash !== sourceFileHash
+  // It means file changes in local, file changes in source - we need to merge
+  if (localFileHash !== trackerFileHash && localFileHash !== sourceFileHash) {
+    return {
+      action: FileAction.MERGE,
+      sourceFileHash,
+      localFileHash,
+      trackerFileHash
+    }
+  }
+
+  // Default case: no changes detected
+  return {
+    action: FileAction.NONE,
+    sourceFileHash,
+    localFileHash,
+    trackerFileHash
+  }
 }
 
 /**
@@ -136,29 +224,76 @@ export function downloadRepository(repo: string, branch: string): { tempDir: str
  */
 export interface FileSyncOperation {
   sourcePath: string
-  destPath: string
-  displaySource: string
-  processedDestination: string
+  localPath: string
   repo: string
-  relativeSourcePath?: string
-  relativeDestPath?: string
+  relativeSourcePath: string
+  relativeLocalPath: string
 }
 
 /**
  * Executes a batch of file sync operations
  * @param operations Array of file sync operations
+ * @param cwd Current working directory
+ * @returns Object containing updated file hashes grouped by repository
  */
-export function executeSyncOperations(operations: FileSyncOperation[]): void {
+export function executeSyncOperations(
+  operations: FileSyncOperation[],
+  cwd: string,
+): Record<string, Record<string, string>> {
+  // Store updated file hashes by repository
+  const updatedHashes: Record<string, Record<string, string>> = {}
+
+  // Process operations directly without grouping
   for (const op of operations) {
-    if (hasFileChanged(op.sourcePath, op.destPath)) {
-      copyFileSync(op.sourcePath, op.destPath)
-      logger.success(
-        `${op.relativeSourcePath || op.displaySource} -> ${op.relativeDestPath || op.processedDestination}`,
-      )
-    } else {
-      // logger.info(`File unchanged, skipping: ${op.relativeDestPath || op.processedDestination}`)
+    if (!op.repo) {
+      logger.warn(`Repository not specified for file: ${op.relativeSourcePath}`)
+      continue
+    }
+
+    // Ensure the repository entry exists in the hashes object
+    if (!updatedHashes[op.repo]) {
+      updatedHashes[op.repo] = {}
+    }
+
+    // Determine what action to take for this file
+    const actionResult = actionOnFile(op.sourcePath, op.localPath, op.repo, op.relativeLocalPath, cwd)
+    const { action, sourceFileHash, localFileHash, trackerFileHash } = actionResult
+
+    logger.info(
+      `Action for ${op.relativeLocalPath}: ${action} | ` +
+      `Source: ${sourceFileHash.substring(0, 8)} | ` +
+      `Local: ${localFileHash.substring(0, 8) || 'N/A'} | ` +
+      `Tracker: ${trackerFileHash ? trackerFileHash.substring(0, 8) : 'N/A'}`
+    )
+
+    // Process the file based on the determined action
+    switch (action) {
+      case FileAction.COPY:
+        // Source file has changed, safe to copy
+        copyFileSync(op.sourcePath, op.localPath)
+        // Calculate and store hash for the updated file
+        const fileHash = getFileHash(op.localPath)
+        // We've already checked that updatedHashes[op.repo] exists above
+        updatedHashes[op.repo]![op.relativeLocalPath] = fileHash
+        logger.success(`${op.relativeSourcePath} -> ${op.relativeLocalPath}`)
+        break
+
+      case FileAction.MERGE:
+        // Both source and local file have changed, need AI merge
+        logger.warn(
+          `Both remote and local changes detected for ${op.relativeSourcePath}. Consider using ai_merge_file task.`,
+        )
+        break
+
+      case FileAction.NONE:
+      default:
+        // No changes or only local changes, skip
+        logger.debug(`File unchanged or only local changes, skipping: ${op.relativeLocalPath}`)
+        break
     }
   }
+
+  return updatedHashes
 }
 
 /**
@@ -195,7 +330,7 @@ export function validateGhFetchConfig(config: CommonTaskConfig): boolean {
           typeof file === 'object' &&
           file !== null &&
           typeof (file as Record<string, unknown>).source === 'string' &&
-          typeof (file as Record<string, unknown>).destination === 'string',
+          typeof (file as Record<string, unknown>).local === 'string',
       )
     })
   )
