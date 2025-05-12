@@ -10,7 +10,7 @@ export {
 } from './validation'
 
 // Export file utilities
-export { escapeShellArg, getFileHash, actionOnFile, syncDirectoryChanges } from './file-utils'
+export { escapeShellArg, getFileHash, actionOnFile, syncDirectoryChanges, handleDeletedFiles } from './file-utils'
 
 // Export repository utilities
 export { getLatestCommitHash, downloadRepository } from './repo-utils'

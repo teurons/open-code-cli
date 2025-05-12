@@ -1,5 +1,5 @@
 import { createHash } from 'crypto'
-import { existsSync, readFileSync, mkdirSync, readdirSync } from 'fs'
+import { existsSync, readFileSync, mkdirSync, readdirSync, unlinkSync } from 'fs'
 import { join, relative } from 'path'
 import { logger } from '../../logger'
 import { TrackerConfig } from '../tracker'
@@ -175,6 +175,88 @@ export function actionOnFile(
  * @param cwd Current working directory (absolute path, optional)
  * @param repo Repository name (optional)
  */
+/**
+ * Identify and handle files that exist in local but not in source
+ * @param sourceDir Source directory path (absolute path)
+ * @param localDir Local directory path (absolute path)
+ * @param repo Repository name
+ * @param cwd Current working directory for relative path calculation
+ * @returns Array of file paths that were removed
+ */
+export function handleDeletedFiles(
+  sourceDir: string,
+  localDir: string,
+  cwd?: string,
+): string[] {
+  const removedFiles: string[] = []
+  
+  // Skip if local directory doesn't exist
+  if (!existsSync(localDir)) {
+    return removedFiles
+  }
+  
+  // Get all files in source directory (recursively)
+  const sourceFiles = new Set<string>()
+  const collectSourceFiles = (dir: string, basePath: string) => {
+    if (!existsSync(dir)) return
+    
+    readdirSync(dir, { withFileTypes: true }).forEach((entry) => {
+      const fullPath = join(dir, entry.name)
+      const relativePath = relative(basePath, fullPath)
+      
+      if (entry.isDirectory()) {
+        collectSourceFiles(fullPath, basePath)
+      } else {
+        sourceFiles.add(relativePath)
+      }
+    })
+  }
+  
+  // Collect all source files
+  collectSourceFiles(sourceDir, sourceDir)
+  
+  // Check local files against source files
+  const checkLocalFiles = (dir: string, basePath: string) => {
+    if (!existsSync(dir)) return
+    
+    readdirSync(dir, { withFileTypes: true }).forEach((entry) => {
+      const fullPath = join(dir, entry.name)
+      const relativePath = relative(basePath, fullPath)
+      
+      if (entry.isDirectory()) {
+        checkLocalFiles(fullPath, basePath)
+      } else {
+        // If file exists in local but not in source, remove it
+        if (!sourceFiles.has(relativePath)) {
+          try {
+            unlinkSync(fullPath)
+            const relativeToRoot = cwd ? relative(cwd, fullPath) : fullPath
+            logger.info(`Removed file that was deleted in source: ${relativeToRoot}`)
+            removedFiles.push(relativeToRoot)
+          } catch (e) {
+            logger.warn(`Failed to remove file ${fullPath}: ${(e as Error).message}`)
+          }
+        }
+      }
+    })
+    
+    // Try to remove empty directories
+    try {
+      const remaining = readdirSync(dir)
+      if (remaining.length === 0) {
+        unlinkSync(dir)
+      }
+    } catch (e) {
+      // Ignore errors when trying to remove directories
+    }
+  }
+  
+  // Check all local files
+  checkLocalFiles(localDir, localDir)
+  
+  return removedFiles
+}
+
 export function syncDirectoryChanges(
   sourceDir: string,
   localDir: string,
