@@ -105,7 +105,7 @@ export async function processRepo(
 
       // Only process directories for deletion check
       if (existsSync(sourcePath) && statSync(sourcePath).isDirectory()) {
-        const removedFiles = await handleDeletedFiles(sourcePath, localPath, cwd)
+        const removedFiles = await handleDeletedFiles(sourcePath, localPath, cwd, repo)
         if (removedFiles.length > 0) {
           logger.info(`Removed ${removedFiles.length} files from ${repo} that were deleted in source`)
         }

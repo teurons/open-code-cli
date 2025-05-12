@@ -2,7 +2,7 @@ import { createHash } from 'crypto'
 import { existsSync, readFileSync, mkdirSync, readdirSync, unlinkSync } from 'fs'
 import { join, relative } from 'path'
 import { logger } from '../../logger'
-import { TrackerConfig } from '../tracker'
+import { TrackerConfig, readTrackerConfig } from '../tracker'
 import { FileAction, FileActionResult, FileSyncOperation } from './types'
 
 /**
@@ -180,9 +180,10 @@ export function actionOnFile(
  * @param sourceDir Source directory path (absolute path)
  * @param localDir Local directory path (absolute path)
  * @param cwd Current working directory for relative path calculation
+ * @param repo Repository name to check tracked files
  * @returns Array of file paths that were removed
  */
-export async function handleDeletedFiles(sourceDir: string, localDir: string, cwd?: string): Promise<string[]> {
+export async function handleDeletedFiles(sourceDir: string, localDir: string, cwd?: string, repo?: string): Promise<string[]> {
   const removedFiles: string[] = []
 
   // Skip if local directory doesn't exist
@@ -210,6 +211,15 @@ export async function handleDeletedFiles(sourceDir: string, localDir: string, cw
   // Collect all source files
   collectSourceFiles(sourceDir, sourceDir)
 
+  // Get tracker data if repo is provided
+  let trackedFiles: Set<string> | null = null
+  if (repo && cwd) {
+    const trackerConfig = readTrackerConfig(cwd)
+    if (trackerConfig.repos[repo] && trackerConfig.repos[repo].files) {
+      trackedFiles = new Set<string>(Object.keys(trackerConfig.repos[repo].files))
+    }
+  }
+
   // Collect files to be deleted (files in local but not in source)
   const filesToDelete: { path: string; relativePath: string }[] = []
 
@@ -226,10 +236,16 @@ export async function handleDeletedFiles(sourceDir: string, localDir: string, cw
         // If file exists in local but not in source, add to deletion list
         if (!sourceFiles.has(relativePath)) {
           const relativeToRoot = cwd ? relative(cwd, fullPath) : fullPath
-          filesToDelete.push({
-            path: fullPath,
-            relativePath: relativeToRoot,
-          })
+          
+          // Only consider tracked files if repo is provided
+          const isTracked = !trackedFiles || trackedFiles.has(relativeToRoot);
+          
+          if (isTracked) {
+            filesToDelete.push({
+              path: fullPath,
+              relativePath: relativeToRoot,
+            })
+          }
         }
       }
     })
