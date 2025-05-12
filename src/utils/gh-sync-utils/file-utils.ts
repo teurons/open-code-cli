@@ -183,27 +183,23 @@ export function actionOnFile(
  * @param cwd Current working directory for relative path calculation
  * @returns Array of file paths that were removed
  */
-export function handleDeletedFiles(
-  sourceDir: string,
-  localDir: string,
-  cwd?: string,
-): string[] {
+export function handleDeletedFiles(sourceDir: string, localDir: string, cwd?: string): string[] {
   const removedFiles: string[] = []
-  
+
   // Skip if local directory doesn't exist
   if (!existsSync(localDir)) {
     return removedFiles
   }
-  
+
   // Get all files in source directory (recursively)
   const sourceFiles = new Set<string>()
   const collectSourceFiles = (dir: string, basePath: string) => {
     if (!existsSync(dir)) return
-    
+
     readdirSync(dir, { withFileTypes: true }).forEach((entry) => {
       const fullPath = join(dir, entry.name)
       const relativePath = relative(basePath, fullPath)
-      
+
       if (entry.isDirectory()) {
         collectSourceFiles(fullPath, basePath)
       } else {
@@ -211,18 +207,18 @@ export function handleDeletedFiles(
       }
     })
   }
-  
+
   // Collect all source files
   collectSourceFiles(sourceDir, sourceDir)
-  
+
   // Check local files against source files
   const checkLocalFiles = (dir: string, basePath: string) => {
     if (!existsSync(dir)) return
-    
+
     readdirSync(dir, { withFileTypes: true }).forEach((entry) => {
       const fullPath = join(dir, entry.name)
       const relativePath = relative(basePath, fullPath)
-      
+
       if (entry.isDirectory()) {
         checkLocalFiles(fullPath, basePath)
       } else {
@@ -239,7 +235,7 @@ export function handleDeletedFiles(
         }
       }
     })
-    
+
     // Try to remove empty directories
     try {
       const remaining = readdirSync(dir)
@@ -250,10 +246,10 @@ export function handleDeletedFiles(
       // Ignore errors when trying to remove directories
     }
   }
-  
+
   // Check all local files
   checkLocalFiles(localDir, localDir)
-  
+
   return removedFiles
 }
 

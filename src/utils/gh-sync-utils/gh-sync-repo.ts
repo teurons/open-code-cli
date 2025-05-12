@@ -92,17 +92,17 @@ export async function processRepo(
     // Execute all file sync operations in batch and get updated file data and results
     const syncResult = await executeSyncOperations(syncOperations, trackerConfig, latestCommitHash)
     fileData = syncResult.updatedFiles
-    
+
     // Handle files that were deleted in source but exist in local
     // This is done after the main sync to ensure we have all source files first
     for (const file of repoGroup.files) {
       const processedSource = context.replaceVariables(file.source)
       const processedLocal = context.replaceVariables(file.local)
-      
+
       const normalizedSource = normalize(processedSource).replace(/^\/+/, '')
       const sourcePath = join(tempDir, normalizedSource)
       const localPath = join(cwd, processedLocal)
-      
+
       // Only process directories for deletion check
       if (existsSync(sourcePath) && statSync(sourcePath).isDirectory()) {
         const removedFiles = handleDeletedFiles(sourcePath, localPath, cwd)
