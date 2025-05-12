@@ -212,7 +212,7 @@ export async function handleDeletedFiles(sourceDir: string, localDir: string, cw
 
   // Collect files to be deleted (files in local but not in source)
   const filesToDelete: { path: string; relativePath: string }[] = []
-  
+
   const collectFilesToDelete = (dir: string, basePath: string) => {
     if (!existsSync(dir)) return
 
@@ -228,7 +228,7 @@ export async function handleDeletedFiles(sourceDir: string, localDir: string, cw
           const relativeToRoot = cwd ? relative(cwd, fullPath) : fullPath
           filesToDelete.push({
             path: fullPath,
-            relativePath: relativeToRoot
+            relativePath: relativeToRoot,
           })
         }
       }
@@ -245,10 +245,10 @@ export async function handleDeletedFiles(sourceDir: string, localDir: string, cw
 
   // Prompt user with options
   logger.info(`Found ${filesToDelete.length} files that exist locally but were deleted in source.`)
-  
+
   const deleteOption = await logger.prompt('How would you like to handle deleted files?', {
     type: 'select',
-    options: ['Delete all files', 'Select files to delete', 'Keep all files']
+    options: ['Delete all files', 'Select files to delete', 'Keep all files'],
   })
 
   if (deleteOption === 'Keep all files') {
@@ -262,18 +262,16 @@ export async function handleDeletedFiles(sourceDir: string, localDir: string, cw
     filesToRemove = filesToDelete
   } else if (deleteOption === 'Select files to delete') {
     // Prepare options for multiselect
-    const options = filesToDelete.map(file => file.relativePath)
-    
+    const options = filesToDelete.map((file) => file.relativePath)
+
     const selectedFiles = await logger.prompt('Select files to delete:', {
       type: 'multiselect',
-      options
+      options,
     })
 
     if (Array.isArray(selectedFiles) && selectedFiles.length > 0) {
       // Filter files based on selection
-      filesToRemove = filesToDelete.filter(file => 
-        selectedFiles.includes(file.relativePath)
-      )
+      filesToRemove = filesToDelete.filter((file) => selectedFiles.includes(file.relativePath))
     } else {
       logger.info('No files selected for deletion.')
       return removedFiles
@@ -297,15 +295,15 @@ export async function handleDeletedFiles(sourceDir: string, localDir: string, cw
 
     try {
       const entries = readdirSync(dir)
-      
+
       // Recursively check subdirectories first
       for (const entry of entries) {
         const fullPath = join(dir, entry)
-        if (existsSync(fullPath) && readdirSync(fullPath, { withFileTypes: true }).some(e => e.isDirectory())) {
+        if (existsSync(fullPath) && readdirSync(fullPath, { withFileTypes: true }).some((e) => e.isDirectory())) {
           cleanEmptyDirs(fullPath)
         }
       }
-      
+
       // Check if directory is now empty after potential subdirectory cleanup
       const remaining = readdirSync(dir)
       if (remaining.length === 0) {
