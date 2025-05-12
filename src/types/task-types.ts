@@ -40,7 +40,7 @@ export interface ExecuteConfig extends BaseTaskConfig {
 }
 
 // GitHub Fetch task configuration
-export interface GhFetchConfig extends BaseTaskConfig {
+export interface GhSyncConfig extends BaseTaskConfig {
   [key: string]: ConfigObject[keyof ConfigObject]
 }
 

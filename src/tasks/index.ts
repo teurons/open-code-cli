@@ -3,7 +3,7 @@ import { PromptTask } from './prompt'
 import { NpmCommandTask } from './npm-cmd'
 import { NpmExecuteTask } from './npm-execute'
 import { NpmInstallTask } from './npm-install'
-import { GhFetchTask } from './gh-fetch'
+import { GhSyncTask } from './gh-sync'
 import { WriteTask } from './write'
 import { AiMergeFileTask } from './ai-merge-file'
 import { AiContentMergeTask } from './ai-content-merge'
@@ -23,7 +23,7 @@ const createDefaultTaskRegistry = (): TaskRegistry => {
   registry.registerTask('npm_cmd', new NpmCommandTask())
   registry.registerTask('npm_execute', new NpmExecuteTask())
   registry.registerTask('npm_install', new NpmInstallTask())
-  registry.registerTask('gh_fetch', new GhFetchTask())
+  registry.registerTask('gh_sync', new GhSyncTask())
   registry.registerTask('write', new WriteTask())
   registry.registerTask('ai_merge_file', new AiMergeFileTask())
   registry.registerTask('ai_content_merge', new AiContentMergeTask())
@@ -45,8 +45,7 @@ export {
   PromptTask,
   NpmCommandTask,
   NpmInstallTask,
-  GhFetchTask,
-  EditJsonTask,
+  GhSyncTask,
   AiMergeFileTask,
   context,
 }

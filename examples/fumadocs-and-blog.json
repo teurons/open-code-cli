@@ -57,7 +57,7 @@
       "description": "Remove existing next.config files before fetching new ones"
     },
     {
-      "task": "gh_fetch",
+      "task": "gh_sync",
       "repos": [
         {
           "repo": "fuma-nama/fumadocs",

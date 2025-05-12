@@ -1,0 +1,31 @@
+{
+  "workflow": [
+    {
+      "task": "gh_sync",
+      "repos": [
+        {
+          "repo": "locospec/locospec-laravel",
+          "sync": true,
+          "branch": "main",
+          "files": [
+            {
+              "source": "/",
+              "local": "locospec-laravel"
+            }
+          ]
+        },
+        {
+          "repo": "rjvim/test-open-code-cli",
+          "sync": true,
+          "branch": "main",
+          "files": [
+            {
+              "source": "/",
+              "local": "test-open-code-cli"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

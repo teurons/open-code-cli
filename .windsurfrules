@@ -1,5 +1,11 @@
 # Windsurf Rules for TypeScript Projects
 
+## Must Rules
+
+- Always write small utility functions, so that when we read code of main functions it feels like poetry
+- Don't write direct code in main function, always small utility functions if they just have one single line inside them
+- Always make an implementation plan and make an algorithm before writing code
+
 ## TypeScript Rules
 
 - Use strict mode in tsconfig.json

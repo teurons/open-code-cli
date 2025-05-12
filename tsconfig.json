@@ -16,8 +16,15 @@
     "sourceMap": true,
     "resolveJsonModule": true
   },
-  "include": ["src"],
-  "exclude": ["dist", "bundle", "node_modules"],
+  "include": [
+    "src",
+    "_archived/gh-fetch-utils-backup.ts"
+  ],
+  "exclude": [
+    "dist",
+    "bundle",
+    "node_modules"
+  ],
   "ts-node": {
     // these options are overrides used only by ts-node
     // same as the --compilerOptions flag and the TS_NODE_COMPILER_OPTIONS environment variable
