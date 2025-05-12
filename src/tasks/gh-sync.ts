@@ -42,6 +42,8 @@ interface RepoGroup {
   sync?: boolean
   /** Branch to fetch from (defaults to main) */
   branch?: string
+  /** Force fetch even if no changes are detected (defaults to false) */
+  force?: boolean
 }
 
 export class GhSyncTask implements Task {
@@ -75,16 +77,23 @@ export class GhSyncTask implements Task {
 
     // Process each repository group directly
     for (const repoGroup of typedRepos) {
-      const { repo, files, sync = false, branch = 'main' } = repoGroup as RepoGroup
+      const typedRepoGroup = repoGroup as RepoGroup
+      const { repo, files, sync = false, branch = 'main' } = typedRepoGroup
 
       // Validate repository group structure
       validateRepositoryGroup(repo, files)
 
       // Replace variables in repo name
       const processedRepo = context.replaceVariables(repo)
+      
+      // Create a modified repoGroup with the processed repo name
+      const processedRepoGroup = {
+        ...typedRepoGroup,
+        repo: processedRepo
+      }
 
       // Process this repository and collect results
-      const repoResult = await this.processRepo(processedRepo, files, cwd, sync, branch)
+      const repoResult = await this.processRepo(processedRepoGroup, cwd)
       allResults.push(...repoResult.results)
     }
 
@@ -102,39 +111,38 @@ export class GhSyncTask implements Task {
 
   /**
    * Process a repository by downloading it once and extracting all files
-   * @param repo The repository name (owner/repo)
-   * @param files The files to extract from the repository
+   * @param repoGroup The repository group configuration
    * @param cwd The current working directory
-   * @param sync Whether to sync this repository (track commits and only fetch if there are changes)
-   * @param branch Branch to fetch from
    * @returns Object containing sync results and status
    */
   private async processRepo(
-    repo: string,
-    files: FetchFile[],
+    repoGroup: RepoGroup,
     cwd: string,
-    sync = false,
-    branch = 'main',
   ): Promise<{
     repo: string
     results: FileSyncResult[]
     success: boolean
   }> {
+    // Get the repo properties, but use the original repoGroup for everything else
+    const { repo, branch = 'main', sync = false, force = false } = repoGroup
+    
     // Read tracker config once at the beginning
     const trackerConfig = readTrackerConfig(cwd)
     // Check if we need to sync by getting the latest commit hash
     let shouldFetch = true
     let latestCommitHash = ''
 
-    if (sync) {
-      try {
-        // Get the latest commit hash from the repository
-        logger.info(`Checking for updates in repository ${repo} (branch: ${branch})`)
-        latestCommitHash = getLatestCommitHash(repo, branch)
-
-        // Check if we need to sync
-        // shouldFetch = needsSync(cwd, repo, branch, latestCommitHash)
-        shouldFetch = true
+    // Always get the latest commit hash for tracking purposes
+    try {
+      logger.info(`Checking for updates in repository ${repo} (branch: ${branch})`)
+      latestCommitHash = getLatestCommitHash(repo, branch)
+      
+      // Only check if we should fetch when sync is enabled and force is disabled
+      if (sync && !force) {
+        // Check if we need to sync by comparing with the last synced commit hash
+        const repoData = trackerConfig.repos[repo]
+        const lastSyncedCommit = repoData?.branch === branch ? repoData.lastCommitHash : null
+        shouldFetch = !lastSyncedCommit || lastSyncedCommit !== latestCommitHash
 
         if (!shouldFetch) {
           logger.info(`Repository ${repo} is already up to date, skipping fetch`)
@@ -146,11 +154,13 @@ export class GhSyncTask implements Task {
         }
 
         logger.info(`Updates found in repository ${repo}, proceeding with fetch`)
-      } catch (e) {
-        logger.warn(`Failed to check for updates in repository ${repo}: ${(e as Error).message}`)
-        // If we fail to check for updates, we'll fetch anyway
-        shouldFetch = true
+      } else if (force) {
+        logger.info(`Force option enabled for repository ${repo}, proceeding with fetch regardless of updates`)
       }
+    } catch (e) {
+      logger.warn(`Failed to check for updates in repository ${repo}: ${(e as Error).message}`)
+      // If we fail to check for updates, we'll fetch anyway
+      shouldFetch = true
     }
 
     // Create a temporary directory for the repository
@@ -168,7 +178,7 @@ export class GhSyncTask implements Task {
       const syncOperations: FileSyncOperation[] = []
 
       // Process each file in the repository
-      for (const file of files) {
+      for (const file of repoGroup.files) {
         const { source, local } = file
 
         // Replace variables in paths
