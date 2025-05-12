@@ -2,7 +2,7 @@ import { logger } from '../../logger'
 import { context } from '../../context'
 import { existsSync, mkdirSync, statSync } from 'fs'
 import { dirname, join, normalize, relative } from 'path'
-import { readTrackerConfig, writeTrackerConfig } from '../tracker'
+import { readTrackerConfig, writeTrackerConfig, TrackerConfig } from '../tracker'
 import {
   getLatestCommitHash,
   downloadRepository,
@@ -130,7 +130,7 @@ async function checkIfShouldFetch(
   branch: string,
   sync: boolean,
   force: boolean,
-  trackerConfig: any,
+  trackerConfig: TrackerConfig,
 ): Promise<{ shouldFetch: boolean; latestCommitHash: string }> {
   let shouldFetch = true
   let latestCommitHash = ''
@@ -251,7 +251,7 @@ function updateTrackerWithLatestData(
   branch: string,
   latestCommitHash: string,
   fileData: Record<string, Record<string, { hash: string; syncedAt: string; action: string }>>,
-  trackerConfig: any,
+  trackerConfig: TrackerConfig,
   cwd: string,
 ): void {
   logger.info(`Updating sync data for repository ${repo}`)
