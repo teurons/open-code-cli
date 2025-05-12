@@ -17,8 +17,7 @@
     "resolveJsonModule": true
   },
   "include": [
-    "src",
-    "_archived/gh-fetch-utils-backup.ts"
+    "src"
   ],
   "exclude": [
     "dist",
