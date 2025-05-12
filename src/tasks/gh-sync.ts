@@ -85,11 +85,11 @@ export class GhSyncTask implements Task {
 
       // Replace variables in repo name
       const processedRepo = context.replaceVariables(repo)
-      
+
       // Create a modified repoGroup with the processed repo name
       const processedRepoGroup = {
         ...typedRepoGroup,
-        repo: processedRepo
+        repo: processedRepo,
       }
 
       // Process this repository and collect results
@@ -125,7 +125,7 @@ export class GhSyncTask implements Task {
   }> {
     // Get the repo properties, but use the original repoGroup for everything else
     const { repo, branch = 'main', sync = false, force = false } = repoGroup
-    
+
     // Read tracker config once at the beginning
     const trackerConfig = readTrackerConfig(cwd)
     // Check if we need to sync by getting the latest commit hash
@@ -136,7 +136,7 @@ export class GhSyncTask implements Task {
     try {
       logger.info(`Checking for updates in repository ${repo} (branch: ${branch})`)
       latestCommitHash = getLatestCommitHash(repo, branch)
-      
+
       // Only check if we should fetch when sync is enabled and force is disabled
       if (sync && !force) {
         // Check if we need to sync by comparing with the last synced commit hash
