@@ -41,7 +41,7 @@ export function getFileHash(filePath: string): string {
  * @param sourcePath Source file path
  * @param localPath Local file path
  * @param repo Repository name
- * @param relativeFilePath Relative file path for tracking
+ * @param relativeLocalPath Relative file path for tracking
  * @param trackerConfig Tracker configuration
  * @returns Object containing the action to take and all relevant file hashes
  */
@@ -49,7 +49,7 @@ export function actionOnFile(
   sourcePath: string,
   localPath: string,
   repo: string,
-  relativeFilePath: string,
+  relativeLocalPath: string,
   trackerConfig: TrackerConfig,
   sourceCommitHash?: string,
 ): FileActionResult {
@@ -70,8 +70,8 @@ export function actionOnFile(
   const localFileHash = getFileHash(localPath)
 
   // 3. Get hash and action of localFile from tracker
-  const trackerFileHash = trackerConfig.repos[repo]?.files?.[relativeFilePath]?.hash || null
-  const trackerAction = trackerConfig.repos[repo]?.files?.[relativeFilePath]?.action || null
+  const trackerFileHash = trackerConfig.repos[repo]?.files?.[relativeLocalPath]?.hash || null
+  const trackerAction = trackerConfig.repos[repo]?.files?.[relativeLocalPath]?.action || null
 
   // 4. Get last commit hash from tracker and use sourceCommitHash if provided
   const lastCommitHash = trackerConfig.repos[repo]?.lastCommitHash || null
@@ -129,6 +129,17 @@ export function actionOnFile(
   if (localFileHash !== trackerFileHash && trackerFileHash === sourceFileHash) {
     return {
       action: FileAction.NONE,
+      sourceFileHash,
+      localFileHash,
+      trackerFileHash,
+    }
+  }
+
+  // If localFileHash !== trackerFileHash && localFileHash === sourceFileHash
+  // It means file changes of local have been pushed to source
+  if (localFileHash !== trackerFileHash && localFileHash === sourceFileHash) {
+    return {
+      action: FileAction.COPY,
       sourceFileHash,
       localFileHash,
       trackerFileHash,
