@@ -183,7 +183,12 @@ export function actionOnFile(
  * @param repo Repository name to check tracked files
  * @returns Array of file paths that were removed
  */
-export async function handleDeletedFiles(sourceDir: string, localDir: string, cwd?: string, repo?: string): Promise<string[]> {
+export async function handleDeletedFiles(
+  sourceDir: string,
+  localDir: string,
+  cwd?: string,
+  repo?: string,
+): Promise<string[]> {
   const removedFiles: string[] = []
 
   // Skip if local directory doesn't exist
@@ -236,10 +241,10 @@ export async function handleDeletedFiles(sourceDir: string, localDir: string, cw
         // If file exists in local but not in source, add to deletion list
         if (!sourceFiles.has(relativePath)) {
           const relativeToRoot = cwd ? relative(cwd, fullPath) : fullPath
-          
+
           // Only consider tracked files if repo is provided
-          const isTracked = !trackedFiles || trackedFiles.has(relativeToRoot);
-          
+          const isTracked = !trackedFiles || trackedFiles.has(relativeToRoot)
+
           if (isTracked) {
             filesToDelete.push({
               path: fullPath,
