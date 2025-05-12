@@ -129,7 +129,12 @@ export function needsSync(directory: string, repo: string, branch: string, lates
  * @param trackerConfig Optional tracker config to use instead of reading from disk
  * @returns The last synced hash or null if not found
  */
-export function getLastSyncedFileHash(directory: string, repo: string, filePath: string, trackerConfig?: TrackerConfig): string | null {
+export function getLastSyncedFileHash(
+  directory: string,
+  repo: string,
+  filePath: string,
+  trackerConfig?: TrackerConfig,
+): string | null {
   // Use provided tracker config or read from disk
   const config = trackerConfig || readTrackerConfig(directory)
 

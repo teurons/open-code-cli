@@ -14,7 +14,7 @@ import { FileAction, FileActionResult, FileSyncOperation } from './types'
 export function escapeShellArg(arg: string): string {
   // For paths with special characters, we need to escape them properly
   // This handles parentheses, spaces, and other special shell characters
-  return `"${arg.replace(/"/g, '\"')}"` // Fix double slash issue
+  return `"${arg.replace(/"/g, '"')}"` // Fix double slash issue
 }
 
 /**
@@ -59,7 +59,7 @@ export function actionOnFile(
       action: FileAction.COPY,
       sourceFileHash: getFileHash(sourcePath),
       localFileHash: '',
-      trackerFileHash: null
+      trackerFileHash: null,
     }
   }
 
@@ -72,7 +72,7 @@ export function actionOnFile(
   // 3. Get hash and action of localFile from tracker
   const trackerFileHash = trackerConfig.repos[repo]?.files?.[relativeFilePath]?.hash || null
   const trackerAction = trackerConfig.repos[repo]?.files?.[relativeFilePath]?.action || null
-  
+
   // 4. Get last commit hash from tracker and use sourceCommitHash if provided
   const lastCommitHash = trackerConfig.repos[repo]?.lastCommitHash || null
   const currentCommitHash = sourceCommitHash || lastCommitHash || null
@@ -81,24 +81,24 @@ export function actionOnFile(
   if (trackerAction === FileAction.MERGE) {
     // If the file was previously merged, we should never copy it
     // Instead, we should either merge again or do nothing based on commit hash
-    
+
     // If commit hash hasn't changed, no action needed regardless of file hash changes
     if (lastCommitHash === currentCommitHash) {
       return {
         action: FileAction.NONE,
         sourceFileHash,
         localFileHash,
-        trackerFileHash
+        trackerFileHash,
       }
     }
-    
+
     // If commit hash has changed, we need to merge again
     // This overrides the normal hash-based logic below
     return {
       action: FileAction.MERGE,
       sourceFileHash,
       localFileHash,
-      trackerFileHash
+      trackerFileHash,
     }
   }
 
@@ -109,7 +109,7 @@ export function actionOnFile(
       action: FileAction.COPY,
       sourceFileHash,
       localFileHash,
-      trackerFileHash
+      trackerFileHash,
     }
   }
 
@@ -120,7 +120,7 @@ export function actionOnFile(
       action: FileAction.COPY,
       sourceFileHash,
       localFileHash,
-      trackerFileHash
+      trackerFileHash,
     }
   }
 
@@ -131,7 +131,7 @@ export function actionOnFile(
       action: FileAction.NONE,
       sourceFileHash,
       localFileHash,
-      trackerFileHash
+      trackerFileHash,
     }
   }
 
@@ -142,7 +142,7 @@ export function actionOnFile(
       action: FileAction.MERGE,
       sourceFileHash,
       localFileHash,
-      trackerFileHash
+      trackerFileHash,
     }
   }
 
@@ -151,7 +151,7 @@ export function actionOnFile(
     action: FileAction.NONE,
     sourceFileHash,
     localFileHash,
-    trackerFileHash
+    trackerFileHash,
   }
 }
 
