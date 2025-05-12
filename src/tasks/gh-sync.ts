@@ -45,6 +45,14 @@ interface RepoGroup {
 }
 
 export class GhSyncTask implements Task {
+  /**
+   * Validate the task configuration
+   * @param config The task configuration
+   * @returns Whether the configuration is valid
+   */
+  validate(config: CommonTaskConfig): boolean {
+    return validateGhSyncConfig(config)
+  }
   // updateDirectoryFileHashes method removed as it's no longer needed
   /**
    * Execute the GitHub fetch task
@@ -191,9 +199,11 @@ export class GhSyncTask implements Task {
 
           // Process based on whether it's a file or directory
           const stats = statSync(sourcePath)
-          stats.isDirectory()
-            ? syncDirectoryChanges(sourcePath, localPath, syncOperations, tempDir, cwd, repo)
-            : processFile()
+          if (stats.isDirectory()) {
+            syncDirectoryChanges(sourcePath, localPath, syncOperations, tempDir, cwd, repo)
+          } else {
+            processFile()
+          }
         } catch (e) {
           throw new Error(`Failed to process from ${repo}/${normalizedSource} (relative path): ${(e as Error).message}`)
         }
@@ -216,78 +226,75 @@ export class GhSyncTask implements Task {
     } catch (error) {
       // Handle any errors during processing
       logger.error(`Error processing repository ${repo}: ${(error as Error).message}`)
-      return {
+      // Store the error result to return after cleanup
+      const errorResult = {
         repo,
         results: [],
         success: false,
       }
-    } finally {
+
       // Clean up temporary directory
       cleanup()
 
-      // Update sync data if sync is enabled and we have a commit hash
-      if (sync && latestCommitHash) {
-        logger.info(`Updating sync data for repository ${repo}`)
-
-        // Update the tracker config we already have
-
-        // Make sure the repo entry exists with updated commit hash
-        if (!trackerConfig.repos[repo]) {
-          trackerConfig.repos[repo] = {
-            repo,
-            branch,
-            lastCommitHash: latestCommitHash,
-            syncedAt: new Date().toISOString(),
-            files: {},
-          }
-        } else {
-          // Update the commit hash and synced time
-          trackerConfig.repos[repo].lastCommitHash = latestCommitHash
-          trackerConfig.repos[repo].syncedAt = new Date().toISOString()
-        }
-
-        // If we have updated file data from sync operations, update them in the tracker
-        if (fileData[repo] && Object.keys(fileData[repo]).length > 0) {
-          // Update file data in the tracker config
-          for (const [filePath, fileInfo] of Object.entries(fileData[repo] || {})) {
-            trackerConfig.repos[repo].files[filePath] = {
-              hash: fileInfo.hash,
-              syncedAt: fileInfo.syncedAt,
-              action: fileInfo.action,
-            }
-          }
-
-          // Remove any existing redundant path properties
-          if (trackerConfig.repos[repo] && trackerConfig.repos[repo].files) {
-            for (const filePath in trackerConfig.repos[repo].files) {
-              const fileData = trackerConfig.repos[repo].files[filePath] as any
-              if (fileData && fileData.path) {
-                delete fileData.path
-              }
-            }
-          }
-        }
-
-        // Write the updated tracker config
-        writeTrackerConfig(cwd, trackerConfig)
-      }
-
-      // If we reached this point without returning, it means there were no operations
-      // Return an empty successful result
-      return {
-        repo,
-        results: [],
-        success: true,
-      }
+      return errorResult
     }
-  }
 
-  /**
-   * Validate the task configuration
-   * @param config The task configuration to validate
-   * @returns True if the configuration is valid, false otherwise
-   */
-  public validate(config: CommonTaskConfig): boolean {
-    return validateGhSyncConfig(config)
+    // Clean up temporary directory
+    cleanup()
+
+    // Update sync data if sync is enabled and we have a commit hash
+    if (sync && latestCommitHash) {
+      logger.info(`Updating sync data for repository ${repo}`)
+
+      // Update the tracker config we already have
+
+      // Make sure the repo entry exists with updated commit hash
+      if (!trackerConfig.repos[repo]) {
+        trackerConfig.repos[repo] = {
+          repo,
+          branch,
+          lastCommitHash: latestCommitHash,
+          syncedAt: new Date().toISOString(),
+          files: {},
+        }
+      } else {
+        // Update the commit hash and synced time
+        trackerConfig.repos[repo].lastCommitHash = latestCommitHash
+        trackerConfig.repos[repo].syncedAt = new Date().toISOString()
+      }
+
+      // If we have updated file data from sync operations, update them in the tracker
+      if (fileData && fileData[repo] && Object.keys(fileData[repo] || {}).length > 0) {
+        // Update file data in the tracker config
+        for (const [filePath, fileInfo] of Object.entries(fileData[repo])) {
+          trackerConfig.repos[repo].files[filePath] = {
+            hash: fileInfo.hash,
+            syncedAt: fileInfo.syncedAt,
+            action: fileInfo.action,
+          }
+        }
+
+        // Remove any existing redundant path properties
+        if (trackerConfig.repos[repo] && trackerConfig.repos[repo].files) {
+          for (const filePath in trackerConfig.repos[repo].files) {
+            const fileData = trackerConfig.repos[repo].files[filePath] as unknown as Record<string, unknown>
+            if (fileData && fileData.path) {
+              delete fileData.path
+            }
+          }
+        }
+      }
+
+      // Write the updated tracker config
+      writeTrackerConfig(cwd, trackerConfig)
+    }
+
+    // If we reached this point without returning, it means there were no operations
+    // Return an empty successful result
+    return {
+      repo,
+      results: [],
+      success: true,
+    }
   }
 }

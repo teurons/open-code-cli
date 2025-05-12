@@ -20,6 +20,7 @@ const compat = new FlatCompat({
 
 export default defineConfig([
   globalIgnores([
+    '_archived/**',
     'bin/**',
     '**/logs',
     '**/*.log',

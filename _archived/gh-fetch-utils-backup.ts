@@ -53,7 +53,7 @@ export function validateRepositoryGroup(repo: unknown, files: unknown): void {
 export function escapeShellArg(arg: string): string {
   // For paths with special characters, we need to escape them properly
   // This handles parentheses, spaces, and other special shell characters
-  return `"${arg.replace(/"/g, '\"')}"` // Fix double slash issue
+  return `"${arg.replace(/"/g, '"')}"` // Fix double slash issue
 }
 
 /**
