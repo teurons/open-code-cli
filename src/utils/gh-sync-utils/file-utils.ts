@@ -179,11 +179,10 @@ export function actionOnFile(
  * Identify and handle files that exist in local but not in source
  * @param sourceDir Source directory path (absolute path)
  * @param localDir Local directory path (absolute path)
- * @param repo Repository name
  * @param cwd Current working directory for relative path calculation
  * @returns Array of file paths that were removed
  */
-export function handleDeletedFiles(sourceDir: string, localDir: string, cwd?: string): string[] {
+export async function handleDeletedFiles(sourceDir: string, localDir: string, cwd?: string): Promise<string[]> {
   const removedFiles: string[] = []
 
   // Skip if local directory doesn't exist
@@ -211,8 +210,10 @@ export function handleDeletedFiles(sourceDir: string, localDir: string, cwd?: st
   // Collect all source files
   collectSourceFiles(sourceDir, sourceDir)
 
-  // Check local files against source files
-  const checkLocalFiles = (dir: string, basePath: string) => {
+  // Collect files to be deleted (files in local but not in source)
+  const filesToDelete: { path: string; relativePath: string }[] = []
+  
+  const collectFilesToDelete = (dir: string, basePath: string) => {
     if (!existsSync(dir)) return
 
     readdirSync(dir, { withFileTypes: true }).forEach((entry) => {
@@ -220,35 +221,105 @@ export function handleDeletedFiles(sourceDir: string, localDir: string, cwd?: st
       const relativePath = relative(basePath, fullPath)
 
       if (entry.isDirectory()) {
-        checkLocalFiles(fullPath, basePath)
+        collectFilesToDelete(fullPath, basePath)
       } else {
-        // If file exists in local but not in source, remove it
+        // If file exists in local but not in source, add to deletion list
         if (!sourceFiles.has(relativePath)) {
-          try {
-            unlinkSync(fullPath)
-            const relativeToRoot = cwd ? relative(cwd, fullPath) : fullPath
-            logger.info(`Removed file that was deleted in source: ${relativeToRoot}`)
-            removedFiles.push(relativeToRoot)
-          } catch (e) {
-            logger.warn(`Failed to remove file ${fullPath}: ${(e as Error).message}`)
-          }
+          const relativeToRoot = cwd ? relative(cwd, fullPath) : fullPath
+          filesToDelete.push({
+            path: fullPath,
+            relativePath: relativeToRoot
+          })
         }
       }
     })
+  }
 
-    // Try to remove empty directories
+  // Collect all files to be deleted
+  collectFilesToDelete(localDir, localDir)
+
+  // If no files to delete, return early
+  if (filesToDelete.length === 0) {
+    return removedFiles
+  }
+
+  // Prompt user with options
+  logger.info(`Found ${filesToDelete.length} files that exist locally but were deleted in source.`)
+  
+  const deleteOption = await logger.prompt('How would you like to handle deleted files?', {
+    type: 'select',
+    options: ['Delete all files', 'Select files to delete', 'Keep all files']
+  })
+
+  if (deleteOption === 'Keep all files') {
+    logger.info('No files were deleted.')
+    return removedFiles
+  }
+
+  let filesToRemove: { path: string; relativePath: string }[] = []
+
+  if (deleteOption === 'Delete all files') {
+    filesToRemove = filesToDelete
+  } else if (deleteOption === 'Select files to delete') {
+    // Prepare options for multiselect
+    const options = filesToDelete.map(file => file.relativePath)
+    
+    const selectedFiles = await logger.prompt('Select files to delete:', {
+      type: 'multiselect',
+      options
+    })
+
+    if (Array.isArray(selectedFiles) && selectedFiles.length > 0) {
+      // Filter files based on selection
+      filesToRemove = filesToDelete.filter(file => 
+        selectedFiles.includes(file.relativePath)
+      )
+    } else {
+      logger.info('No files selected for deletion.')
+      return removedFiles
+    }
+  }
+
+  // Delete the selected files
+  for (const file of filesToRemove) {
     try {
+      unlinkSync(file.path)
+      logger.info(`Removed file that was deleted in source: ${file.relativePath}`)
+      removedFiles.push(file.relativePath)
+    } catch (e) {
+      logger.warn(`Failed to remove file ${file.path}: ${(e as Error).message}`)
+    }
+  }
+
+  // Clean up empty directories
+  const cleanEmptyDirs = (dir: string) => {
+    if (!existsSync(dir)) return
+
+    try {
+      const entries = readdirSync(dir)
+      
+      // Recursively check subdirectories first
+      for (const entry of entries) {
+        const fullPath = join(dir, entry)
+        if (existsSync(fullPath) && readdirSync(fullPath, { withFileTypes: true }).some(e => e.isDirectory())) {
+          cleanEmptyDirs(fullPath)
+        }
+      }
+      
+      // Check if directory is now empty after potential subdirectory cleanup
       const remaining = readdirSync(dir)
       if (remaining.length === 0) {
         unlinkSync(dir)
+        const relativeDir = cwd ? relative(cwd, dir) : dir
+        logger.info(`Removed empty directory: ${relativeDir}`)
       }
     } catch (e) {
       // Ignore errors when trying to remove directories
     }
   }
 
-  // Check all local files
-  checkLocalFiles(localDir, localDir)
+  // Clean up empty directories
+  cleanEmptyDirs(localDir)
 
   return removedFiles
 }
