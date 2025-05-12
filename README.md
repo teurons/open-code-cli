@@ -360,6 +360,51 @@ const registry = createTaskRegistry()
 registry.registerTask('my_custom_task', new MyCustomTask())
 ```
 
+## Core Algorithms
+
+### File Action Decision Algorithm
+
+The `actionOnFile` function determines what action to take on a file during synchronization by comparing file hashes:
+
+```
+Function: actionOnFile(sourcePath, localPath, repo, relativeLocalPath, trackerConfig, sourceCommitHash)
+
+1. If local file doesn't exist:
+   - Return COPY action
+
+2. Calculate hashes:
+   - sourceFileHash = hash of source file
+   - localFileHash = hash of local file
+   - trackerFileHash = hash from tracker config (or null if not tracked)
+   - lastCommitHash = commit hash from tracker (or null)
+   - currentCommitHash = sourceCommitHash or lastCommitHash (or null)
+
+3. Special handling for previously merged files:
+   - If trackerAction is MERGE:
+     - If lastCommitHash equals currentCommitHash:
+       - Return NONE action (no changes needed)
+     - Otherwise:
+       - Return MERGE action (commit hash changed)
+
+4. If no tracking data exists (trackerFileHash is null):
+   - Return COPY action (first time syncing)
+
+5. Compare file hashes:
+   - If localFileHash equals trackerFileHash AND localFileHash doesn't equal sourceFileHash:
+     - Return COPY action (only source file changed)
+   - If localFileHash doesn't equal trackerFileHash AND trackerFileHash equals sourceFileHash:
+     - Return NONE action (only local file changed)
+   - If localFileHash doesn't equal trackerFileHash AND localFileHash equals sourceFileHash:
+     - Return COPY action (local changes pushed to source)
+   - If localFileHash doesn't equal trackerFileHash AND localFileHash doesn't equal sourceFileHash:
+     - Return MERGE action (both files changed independently)
+
+6. Default case:
+   - Return NONE action (no changes detected)
+```
+
+This algorithm ensures files are properly synchronized while preserving local changes when appropriate and merging when necessary.
+
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](./LICENSE) file for details.
