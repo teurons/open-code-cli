@@ -17,11 +17,11 @@ export async function executeSyncOperations(
   trackerConfig: TrackerConfig,
   sourceCommitHash?: string,
 ): Promise<{
-  updatedFiles: Record<string, Record<string, { hash: string; syncedAt: string; action: string }>>
+  updatedFiles: Record<string, Record<string, { hash: string; syncedAt: string; action: string; relativeSourcePath: string }>>
   results: FileSyncResult[]
 }> {
   const results: FileSyncResult[] = []
-  const updatedFiles: Record<string, Record<string, { hash: string; syncedAt: string; action: string }>> = {}
+  const updatedFiles: Record<string, Record<string, { hash: string; syncedAt: string; action: string; relativeSourcePath: string }>> = {}
 
   // Process each operation
   for (const operation of operations) {
@@ -61,6 +61,7 @@ export async function executeSyncOperations(
               hash: syncResult.fileHash,
               syncedAt: syncResult.syncedAt,
               action: FileAction.COPY,
+              relativeSourcePath: operation.relativeSourcePath,
             }
           } catch (e) {
             syncResult.success = false
@@ -125,6 +126,7 @@ export async function executeSyncOperations(
               hash: syncResult.fileHash,
               syncedAt: syncResult.syncedAt,
               action: FileAction.MERGE,
+              relativeSourcePath: operation.relativeSourcePath,
             }
           } catch (e) {
             syncResult.success = false

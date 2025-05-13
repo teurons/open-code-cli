@@ -12,16 +12,17 @@ export interface FileSyncData {
   hash: string
   syncedAt: string
   action?: string
+  relativeSourcePath?: string
 }
 
 /**
  * Interface for repository sync tracking data
  */
 export interface RepoSyncData {
-  repo: string
   branch: string
   lastCommitHash: string
   syncedAt: string
+  forkRepo?: string
   files: Record<string, FileSyncData>
 }
 
@@ -76,18 +77,22 @@ export function writeTrackerConfig(directory: string, config: TrackerConfig): vo
 /**
  * Updates the sync data for a repository
  */
-export function updateRepoSyncData(directory: string, repo: string, branch: string, commitHash: string): void {
+export function updateRepoSyncData(directory: string, repo: string, branch: string, commitHash: string, forkRepo?: string): void {
   const config = readTrackerConfig(directory)
 
   // Preserve existing file data if it exists
   const existingFiles = config.repos[repo]?.files || {}
 
   config.repos[repo] = {
-    repo,
     branch,
     lastCommitHash: commitHash,
     syncedAt: new Date().toISOString(),
     files: existingFiles,
+  }
+  
+  // Add forkRepo if provided
+  if (forkRepo) {
+    config.repos[repo].forkRepo = forkRepo
   }
 
   writeTrackerConfig(directory, config)

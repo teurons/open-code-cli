@@ -39,6 +39,8 @@ export interface RepoGroup {
   branch?: string
   /** Force fetch even if no changes are detected (defaults to false) */
   force?: boolean
+  /** Optional fork repository to use instead of the main repo */
+  forkRepo?: string
 }
 
 /**
@@ -56,7 +58,7 @@ export async function processRepo(
   success: boolean
 }> {
   // Get the repo properties, but use the original repoGroup for everything else
-  const { repo, branch = 'main', sync = false, force = false } = repoGroup
+  const { repo, branch = 'main', sync = false, force = false, forkRepo } = repoGroup
 
   // Read tracker config once at the beginning
   const trackerConfig = readTrackerConfig(cwd)
@@ -80,7 +82,10 @@ export async function processRepo(
   const { tempDir, cleanup } = downloadRepository(repo, branch)
 
   // Variable to store file data from sync operations
-  let fileData: Record<string, Record<string, { hash: string; syncedAt: string; action: string }>> = {}
+  let fileData: Record<
+    string,
+    Record<string, { hash: string; syncedAt: string; action: string; relativeSourcePath: string }>
+  > = {}
 
   // Track if we're in an error state to avoid updating sync data after errors
   let hasError = false
@@ -137,7 +142,7 @@ export async function processRepo(
 
     // Update sync data if sync is enabled and we have a commit hash
     if (sync && latestCommitHash && !hasError) {
-      updateTrackerWithLatestData(repo, branch, latestCommitHash, fileData, trackerConfig, cwd)
+      updateTrackerWithLatestData(repo, branch, latestCommitHash, fileData, trackerConfig, cwd, forkRepo)
     }
   }
 }
@@ -270,25 +275,37 @@ function updateTrackerWithLatestData(
   repo: string,
   branch: string,
   latestCommitHash: string,
-  fileData: Record<string, Record<string, { hash: string; syncedAt: string; action: string }>>,
+  fileData: Record<
+    string,
+    Record<string, { hash: string; syncedAt: string; action: string; relativeSourcePath: string }>
+  >,
   trackerConfig: TrackerConfig,
   cwd: string,
+  forkRepo?: string,
 ): void {
   logger.info(`Updating sync data for repository ${repo}`)
 
   // Make sure the repo entry exists with updated commit hash
   if (!trackerConfig.repos[repo]) {
     trackerConfig.repos[repo] = {
-      repo,
       branch,
       lastCommitHash: latestCommitHash,
       syncedAt: new Date().toISOString(),
       files: {},
     }
+    // Add forkRepo if provided
+    if (forkRepo) {
+      trackerConfig.repos[repo].forkRepo = forkRepo
+    }
   } else {
     // Update the commit hash and synced time
     trackerConfig.repos[repo].lastCommitHash = latestCommitHash
     trackerConfig.repos[repo].syncedAt = new Date().toISOString()
+
+    // Update forkRepo if provided
+    if (forkRepo) {
+      trackerConfig.repos[repo].forkRepo = forkRepo
+    }
   }
 
   // If we have updated file data from sync operations, update them in the tracker
@@ -299,11 +316,12 @@ function updateTrackerWithLatestData(
         hash: fileInfo.hash,
         syncedAt: fileInfo.syncedAt,
         action: fileInfo.action,
+        relativeSourcePath: fileInfo.relativeSourcePath,
       }
     }
 
     // Remove any existing redundant path properties
-    if (trackerConfig.repos[repo] && trackerConfig.repos[repo].files) {
+    if (trackerConfig.repos[repo]?.files) {
       for (const filePath in trackerConfig.repos[repo].files) {
         const fileData = trackerConfig.repos[repo].files[filePath] as unknown as Record<string, unknown>
         if (fileData && fileData.path) {

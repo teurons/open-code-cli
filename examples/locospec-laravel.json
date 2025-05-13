@@ -7,9 +7,10 @@
           "repo": "locospec/locospec-laravel",
           "sync": true,
           "branch": "main",
+          "forkRepo": "myorg/locospec-laravel-fork",
           "files": [
             {
-              "source": "/",
+              "source": "/src",
               "local": "locospec-laravel"
             }
           ]

@@ -1,0 +1,24 @@
+{
+  "repos": {
+    "locospec/locospec-laravel": {
+      "branch": "main",
+      "lastCommitHash": "b5777199e33fd540f9c300ccf5c4cae194cb0eb7",
+      "syncedAt": "2025-05-12T10:59:34.291Z",
+      "forkRepo": "myorg/locospec-laravel-fork",
+      "files": {
+        "locospec-laravel/CHANGELOG.md": {
+          "hash": "101f496338b4c9c8838aa54fd8994151",
+          "syncedAt": "2025-05-12T10:59:34.158Z",
+          "action": "copy",
+          "relativeSourcePath": "CHANGELOG.md"
+        },
+        "locospec-laravel/README.md": {
+          "hash": "a9b7ba70783b617e9998dc4dd82eb3c5",
+          "syncedAt": "2025-05-12T10:59:34.187Z",
+          "action": "copy",
+          "relativeSourcePath": "README.md"
+        }
+      }
+    }
+  }
+}
