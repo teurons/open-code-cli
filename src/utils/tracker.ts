@@ -77,36 +77,6 @@ export function writeTrackerConfig(directory: string, config: TrackerConfig): vo
 }
 
 /**
- * Updates the sync data for a repository
- */
-export function updateRepoSyncData(
-  directory: string,
-  repo: string,
-  branch: string,
-  commitHash: string,
-  forkRepo?: string,
-): void {
-  const config = readTrackerConfig(directory)
-
-  // Preserve existing file data if it exists
-  const existingFiles = config.repos[repo]?.files || {}
-
-  config.repos[repo] = {
-    branch,
-    lastCommitHash: commitHash,
-    syncedAt: new Date().toISOString(),
-    files: existingFiles,
-  }
-
-  // Add forkRepo if provided
-  if (forkRepo) {
-    config.repos[repo].forkRepo = forkRepo
-  }
-
-  writeTrackerConfig(directory, config)
-}
-
-/**
  * Gets the last synced commit hash for a repository
  * Returns null if the repository hasn't been synced before
  */
