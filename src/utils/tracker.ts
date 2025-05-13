@@ -1,6 +1,7 @@
 import fs from 'fs'
 import path from 'path'
 import { logger } from '../logger'
+import type { FetchFile } from './gh-sync-utils/gh-sync-repo'
 
 // Tracker file name
 const TRACKER_FILENAME = 'open-code-cli.tracker.json'
@@ -23,6 +24,7 @@ export interface RepoSyncData {
   lastCommitHash: string
   syncedAt: string
   forkRepo?: string
+  filePaths: FetchFile[]
   files: Record<string, FileSyncData>
 }
 

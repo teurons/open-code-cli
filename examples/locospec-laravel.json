@@ -19,6 +19,7 @@
           "repo": "rjvim/test-open-code-cli",
           "sync": true,
           "branch": "main",
+          "forkRepo": "myorg/test-open-code-cli-fork",
           "files": [
             {
               "source": "/",

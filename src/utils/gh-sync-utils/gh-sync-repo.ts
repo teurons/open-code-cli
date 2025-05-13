@@ -142,7 +142,16 @@ export async function processRepo(
 
     // Update sync data if sync is enabled and we have a commit hash
     if (sync && latestCommitHash && !hasError) {
-      updateTrackerWithLatestData(repo, branch, latestCommitHash, fileData, trackerConfig, cwd, forkRepo)
+      updateTrackerWithLatestData(
+        repo,
+        branch,
+        latestCommitHash,
+        fileData,
+        trackerConfig,
+        cwd,
+        repoGroup.files,
+        forkRepo,
+      )
     }
   }
 }
@@ -281,6 +290,7 @@ function updateTrackerWithLatestData(
   >,
   trackerConfig: TrackerConfig,
   cwd: string,
+  filePaths: FetchFile[],
   forkRepo?: string,
 ): void {
   logger.info(`Updating sync data for repository ${repo}`)
@@ -291,6 +301,7 @@ function updateTrackerWithLatestData(
       branch,
       lastCommitHash: latestCommitHash,
       syncedAt: new Date().toISOString(),
+      filePaths,
       files: {},
     }
     // Add forkRepo if provided
@@ -301,6 +312,7 @@ function updateTrackerWithLatestData(
     // Update the commit hash and synced time
     trackerConfig.repos[repo].lastCommitHash = latestCommitHash
     trackerConfig.repos[repo].syncedAt = new Date().toISOString()
+    trackerConfig.repos[repo].filePaths = filePaths
 
     // Update forkRepo if provided
     if (forkRepo) {
