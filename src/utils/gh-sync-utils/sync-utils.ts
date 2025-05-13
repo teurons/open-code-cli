@@ -17,11 +17,17 @@ export async function executeSyncOperations(
   trackerConfig: TrackerConfig,
   sourceCommitHash?: string,
 ): Promise<{
-  updatedFiles: Record<string, Record<string, { hash: string; syncedAt: string; action: string; relativeSourcePath: string }>>
+  updatedFiles: Record<
+    string,
+    Record<string, { hash: string; syncedAt: string; action: string; relativeSourcePath: string }>
+  >
   results: FileSyncResult[]
 }> {
   const results: FileSyncResult[] = []
-  const updatedFiles: Record<string, Record<string, { hash: string; syncedAt: string; action: string; relativeSourcePath: string }>> = {}
+  const updatedFiles: Record<
+    string,
+    Record<string, { hash: string; syncedAt: string; action: string; relativeSourcePath: string }>
+  > = {}
 
   // Process each operation
   for (const operation of operations) {

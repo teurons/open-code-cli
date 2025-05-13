@@ -77,7 +77,13 @@ export function writeTrackerConfig(directory: string, config: TrackerConfig): vo
 /**
  * Updates the sync data for a repository
  */
-export function updateRepoSyncData(directory: string, repo: string, branch: string, commitHash: string, forkRepo?: string): void {
+export function updateRepoSyncData(
+  directory: string,
+  repo: string,
+  branch: string,
+  commitHash: string,
+  forkRepo?: string,
+): void {
   const config = readTrackerConfig(directory)
 
   // Preserve existing file data if it exists
@@ -89,7 +95,7 @@ export function updateRepoSyncData(directory: string, repo: string, branch: stri
     syncedAt: new Date().toISOString(),
     files: existingFiles,
   }
-  
+
   // Add forkRepo if provided
   if (forkRepo) {
     config.repos[repo].forkRepo = forkRepo
