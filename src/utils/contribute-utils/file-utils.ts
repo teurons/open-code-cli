@@ -1,4 +1,4 @@
-import { existsSync, copyFileSync, statSync, mkdirSync } from 'fs'
+import { existsSync, copyFileSync, statSync, mkdirSync, readdirSync } from 'fs'
 import { dirname, join, relative } from 'path'
 import { logger } from '../../logger'
 import { context } from '../../context'
@@ -12,7 +12,7 @@ export function collectContributeSyncOperations(
   filePaths: FetchFile[],
   tempDir: string,
   cwd: string,
-  repo: string
+  repo: string,
 ): ContributeSyncOperation[] {
   const syncOperations: ContributeSyncOperation[] = []
 
@@ -28,23 +28,9 @@ export function collectContributeSyncOperations(
     const sourceFullPath = join(tempDir, processedSource)
 
     if (statSync(localFullPath).isDirectory()) {
-      collectDirectoryOperations(
-        localFullPath,
-        sourceFullPath,
-        cwd,
-        tempDir,
-        repo,
-        syncOperations
-      )
+      collectDirectoryOperations(localFullPath, sourceFullPath, cwd, tempDir, repo, syncOperations)
     } else {
-      addFileToSyncOperations(
-        localFullPath,
-        sourceFullPath,
-        cwd,
-        tempDir,
-        repo,
-        syncOperations
-      )
+      addFileToSyncOperations(localFullPath, sourceFullPath, cwd, tempDir, repo, syncOperations)
     }
   }
 
@@ -60,7 +46,7 @@ function collectDirectoryOperations(
   cwd: string,
   tempDir: string,
   repo: string,
-  syncOperations: ContributeSyncOperation[]
+  syncOperations: ContributeSyncOperation[],
 ): void {
   // Ensure source directory exists
   if (!existsSync(sourceDirPath)) {
@@ -68,30 +54,16 @@ function collectDirectoryOperations(
   }
 
   // Get all files in the local directory
-  const files = require('fs').readdirSync(localDirPath)
+  const files = readdirSync(localDirPath)
 
   for (const file of files) {
     const localFilePath = join(localDirPath, file)
     const sourceFilePath = join(sourceDirPath, file)
-    
+
     if (statSync(localFilePath).isDirectory()) {
-      collectDirectoryOperations(
-        localFilePath,
-        sourceFilePath,
-        cwd,
-        tempDir,
-        repo,
-        syncOperations
-      )
+      collectDirectoryOperations(localFilePath, sourceFilePath, cwd, tempDir, repo, syncOperations)
     } else {
-      addFileToSyncOperations(
-        localFilePath,
-        sourceFilePath,
-        cwd,
-        tempDir,
-        repo,
-        syncOperations
-      )
+      addFileToSyncOperations(localFilePath, sourceFilePath, cwd, tempDir, repo, syncOperations)
     }
   }
 }
@@ -105,7 +77,7 @@ function addFileToSyncOperations(
   cwd: string,
   tempDir: string,
   repo: string,
-  syncOperations: ContributeSyncOperation[]
+  syncOperations: ContributeSyncOperation[],
 ): void {
   const relativeLocalPath = relative(cwd, localFilePath)
   const relativeSourcePath = relative(tempDir, sourceFilePath)
@@ -124,13 +96,13 @@ function addFileToSyncOperations(
  */
 export async function executeContributeSyncOperations(
   operations: ContributeSyncOperation[],
-  dryRun: boolean
+  dryRun: boolean,
 ): Promise<ContributeSyncResult[]> {
   const results: ContributeSyncResult[] = []
 
   for (const operation of operations) {
     const { absoluteLocalPath, absoluteSourcePath, relativeLocalPath, relativeSourcePath } = operation
-    
+
     try {
       if (dryRun) {
         logger.info(`[DRY RUN] Would copy ${relativeLocalPath} to ${relativeSourcePath}`)
@@ -145,11 +117,11 @@ export async function executeContributeSyncOperations(
         if (!existsSync(sourceDir)) {
           mkdirSync(sourceDir, { recursive: true })
         }
-        
+
         // Copy the file
         copyFileSync(absoluteLocalPath, absoluteSourcePath)
         logger.info(`Copied ${relativeLocalPath} to ${relativeSourcePath}`)
-        
+
         results.push({
           operation,
           success: true,
@@ -180,9 +152,9 @@ export function generateContributeSyncSummary(results: ContributeSyncResult[]): 
   totalCount: number
 } {
   return {
-    copyCount: results.filter(r => r.success && r.action === 'copy').length,
-    skipCount: results.filter(r => r.success && r.action === 'skip').length,
-    failCount: results.filter(r => !r.success).length,
+    copyCount: results.filter((r) => r.success && r.action === 'copy').length,
+    skipCount: results.filter((r) => r.success && r.action === 'skip').length,
+    failCount: results.filter((r) => !r.success).length,
     totalCount: results.length,
   }
 }
@@ -198,18 +170,18 @@ export function logContributeSyncSummary(
     totalCount: number
   },
   isRepoLevel: boolean,
-  repoName?: string
+  repoName?: string,
 ): void {
   const { copyCount, skipCount, failCount, totalCount } = summary
-  
+
   const prefix = isRepoLevel && repoName ? `[${repoName}] ` : ''
-  
+
   if (totalCount === 0) {
     logger.info(`${prefix}No files to contribute`)
     return
   }
-  
+
   logger.info(
-    `${prefix}Contribute summary: ${copyCount} copied, ${skipCount} skipped, ${failCount} failed, ${totalCount} total`
+    `${prefix}Contribute summary: ${copyCount} copied, ${skipCount} skipped, ${failCount} failed, ${totalCount} total`,
   )
 }

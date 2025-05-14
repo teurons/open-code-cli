@@ -14,7 +14,7 @@ export function checkGitHubCli(): { isInstalled: boolean; isAuthenticated: boole
   try {
     // Check if gh is installed
     execSync('which gh', { stdio: 'ignore' })
-    
+
     try {
       // Check if gh is authenticated
       execSync('gh auth status', { stdio: 'ignore' })
@@ -58,9 +58,9 @@ export function cloneForkRepo(forkRepo: string): { tempDir: string; cleanup: () 
 export function createBranch(tempDir: string, branchName: string): boolean {
   try {
     logger.info(`Creating branch ${branchName} in forked repository`)
-    execSync(`git checkout -b ${escapeShellArg(branchName)}`, { 
-      stdio: 'inherit', 
-      cwd: tempDir 
+    execSync(`git checkout -b ${escapeShellArg(branchName)}`, {
+      stdio: 'inherit',
+      cwd: tempDir,
     })
     return true
   } catch (e) {
@@ -76,9 +76,9 @@ export function commitChanges(tempDir: string, commitMessage: string): boolean {
   try {
     logger.info('Committing changes to forked repository')
     execSync('git add .', { stdio: 'inherit', cwd: tempDir })
-    execSync(`git commit -m ${escapeShellArg(commitMessage)}`, { 
-      stdio: 'inherit', 
-      cwd: tempDir 
+    execSync(`git commit -m ${escapeShellArg(commitMessage)}`, {
+      stdio: 'inherit',
+      cwd: tempDir,
     })
     return true
   } catch (e) {
@@ -93,9 +93,9 @@ export function commitChanges(tempDir: string, commitMessage: string): boolean {
 export function pushBranch(tempDir: string, branchName: string): boolean {
   try {
     logger.info(`Pushing branch ${branchName} to forked repository`)
-    execSync(`git push -u origin ${escapeShellArg(branchName)}`, { 
-      stdio: 'inherit', 
-      cwd: tempDir 
+    execSync(`git push -u origin ${escapeShellArg(branchName)}`, {
+      stdio: 'inherit',
+      cwd: tempDir,
     })
     return true
   } catch (e) {
@@ -114,7 +114,7 @@ export function createPullRequest(
   branchName: string,
   prTitle: string,
   prBody: string,
-  dryRun: boolean = false
+  dryRun: boolean = false,
 ): { success: boolean; prNumber?: number; prUrl?: string } {
   try {
     // If in dry run mode, just log what would happen and return success
@@ -128,29 +128,29 @@ export function createPullRequest(
         prUrl: 'https://github.com/dry-run/pr-url',
       }
     }
-    
+
     logger.info(`Creating pull request from ${forkRepo}:${branchName} to ${sourceRepo}:main`)
-    
+
     // Use fork owner with source repo for PR creation
-    
+
     // Create PR using GitHub CLI
     const prCommand = `gh pr create --repo ${escapeShellArg(sourceRepo)} --head ${
       forkRepo.split('/')[0]
-    }:${escapeShellArg(branchName)} --title ${escapeShellArg(prTitle)} --body ${
-      escapeShellArg(prBody)
-    }`
-    
-    const prOutput = execSync(prCommand, { 
-      stdio: 'pipe', 
-      cwd: tempDir 
-    }).toString().trim()
-    
+    }:${escapeShellArg(branchName)} --title ${escapeShellArg(prTitle)} --body ${escapeShellArg(prBody)}`
+
+    const prOutput = execSync(prCommand, {
+      stdio: 'pipe',
+      cwd: tempDir,
+    })
+      .toString()
+      .trim()
+
     // Extract PR number and URL from the output
     const prUrl = prOutput
     const prNumber = prUrl.split('/').pop()
-    
+
     logger.info(`Pull request created: ${prUrl}`)
-    
+
     return {
       success: true,
       prNumber: Number(prNumber),
