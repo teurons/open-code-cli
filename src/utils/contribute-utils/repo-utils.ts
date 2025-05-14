@@ -77,15 +77,15 @@ export function commitChanges(tempDir: string, commitMessage: string): { success
   try {
     logger.info('Committing changes to forked repository')
     execSync('git add .', { stdio: 'inherit', cwd: tempDir })
-    
+
     // Check if there are changes to commit
     const statusOutput = execSync('git status --porcelain', { stdio: 'pipe', cwd: tempDir }).toString().trim()
-    
+
     if (!statusOutput) {
       logger.info('No changes to commit, working tree clean')
       return { success: true, changesCommitted: false } // No changes to commit
     }
-    
+
     execSync(`git commit -m ${escapeShellArg(commitMessage)}`, {
       stdio: 'inherit',
       cwd: tempDir,
