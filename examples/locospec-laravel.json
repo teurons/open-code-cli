@@ -7,10 +7,10 @@
           "repo": "locospec/locospec-laravel",
           "sync": true,
           "branch": "main",
-          "forkRepo": "myorg/locospec-laravel-fork",
+          "forkRepo": "rjvim/locospec-laravel",
           "files": [
             {
-              "source": "/src",
+              "source": "/",
               "local": "locospec-laravel"
             }
           ]
@@ -19,7 +19,6 @@
           "repo": "rjvim/test-open-code-cli",
           "sync": true,
           "branch": "main",
-          "forkRepo": "myorg/test-open-code-cli-fork",
           "files": [
             {
               "source": "/",

@@ -121,9 +121,15 @@ export async function handler(argv: ArgumentsCamelCase<ContributeArgv>) {
         }
 
         // 5. Commit changes
-        const commitSuccess = commitChanges(tempDir, commitMessage)
-        if (!commitSuccess) {
+        const commitResult = commitChanges(tempDir, commitMessage)
+        if (!commitResult.success) {
           logger.error(`Failed to commit changes for ${repo}`)
+          continue
+        }
+        
+        // If no changes were committed, skip push and PR creation
+        if (!commitResult.changesCommitted) {
+          logger.info(`No changes to push for ${repo}, skipping PR creation`)
           continue
         }
 

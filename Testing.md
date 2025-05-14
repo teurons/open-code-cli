@@ -37,3 +37,7 @@ rm -rf locospec-laravel && rm -rf test-open-code-cli && rm -f open-code-cli.trac
 ```
 ./../bin/run workflow locospec-laravel.json
 ```
+
+```
+./../bin/run contribute
+```
