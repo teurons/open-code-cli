@@ -29,7 +29,9 @@ export function validateDependencies(depends: unknown): void {
  */
 export function validateReposConfiguration(repos: unknown[]): void {
   if (!repos || !Array.isArray(repos) || repos.length === 0) {
-    throw new Error('No repositories provided. The repos field must be an array of repository groups.')
+    throw new Error(
+      'No repositories provided. The repos field must be an array of repository groups.'
+    )
   }
 }
 
@@ -188,7 +190,9 @@ export function actionOnFile(
  * @returns The latest commit hash
  */
 export function getLatestCommitHash(repo: string, branch: string): string {
-  return execSync(`git ls-remote https://github.com/${repo}.git ${branch} | cut -f1`).toString().trim()
+  return execSync(`git ls-remote https://github.com/${repo}.git ${branch} | cut -f1`)
+    .toString()
+    .trim()
 }
 
 /**
@@ -197,7 +201,10 @@ export function getLatestCommitHash(repo: string, branch: string): string {
  * @param branch The branch name
  * @returns The path to the temporary directory and a cleanup function
  */
-export function downloadRepository(repo: string, branch: string): { tempDir: string; cleanup: () => void } {
+export function downloadRepository(
+  repo: string,
+  branch: string
+): { tempDir: string; cleanup: () => void } {
   const tempDir = join(tmpdir(), `gh-fetch-${randomUUID()}`)
   mkdirSync(tempDir, { recursive: true })
 
@@ -297,7 +304,13 @@ export function executeSyncOperations(
     }
 
     // Determine what action to take for this file
-    const actionResult = actionOnFile(op.sourcePath, op.localPath, op.repo, op.relativeLocalPath, trackerConfig)
+    const actionResult = actionOnFile(
+      op.sourcePath,
+      op.localPath,
+      op.repo,
+      op.relativeLocalPath,
+      trackerConfig
+    )
     const { action, sourceFileHash, localFileHash, trackerFileHash } = actionResult
 
     // Create a result object for this operation
@@ -409,7 +422,11 @@ export function generateSyncSummary(results: FileSyncResult[]): SyncSummary {
  * @param isRepoLevel Whether this is a repository-level summary (true) or overall summary (false)
  * @param repoName Optional repository name for repo-level summaries
  */
-export function logSyncSummary(summary: SyncSummary, isRepoLevel: boolean = false, repoName?: string): void {
+export function logSyncSummary(
+  summary: SyncSummary,
+  isRepoLevel: boolean = false,
+  repoName?: string
+): void {
   const scope = isRepoLevel && repoName ? `Repository ${repoName}` : 'Overall'
 
   logger.info(
@@ -422,7 +439,9 @@ export function logSyncSummary(summary: SyncSummary, isRepoLevel: boolean = fals
   if (summary.failCount > 0) {
     logger.warn(`${isRepoLevel ? 'Files' : 'Files across all repositories'} with issues:`)
     summary.failedFiles.forEach(r => {
-      const path = isRepoLevel ? r.operation.relativeLocalPath : `${r.operation.repo}/${r.operation.relativeLocalPath}`
+      const path = isRepoLevel
+        ? r.operation.relativeLocalPath
+        : `${r.operation.repo}/${r.operation.relativeLocalPath}`
       logger.warn(`- ${path}: ${r.actionResult.action} - ${r.syncResult.message}`)
     })
   }
