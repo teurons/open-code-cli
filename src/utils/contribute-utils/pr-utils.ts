@@ -40,7 +40,9 @@ export function createPullRequest(
   try {
     // If in dry run mode, just log what would happen and return success
     if (dryRun) {
-      logger.info(`[DRY RUN] Would create pull request from ${forkRepo}:${branchName} to ${sourceRepo}:main`)
+      logger.info(
+        `[DRY RUN] Would create pull request from ${forkRepo}:${branchName} to ${sourceRepo}:main`
+      )
       logger.info(`[DRY RUN] PR Title: ${prTitle}`)
       logger.info(`[DRY RUN] PR Body: ${prBody}`)
       return {

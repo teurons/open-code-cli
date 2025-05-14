@@ -320,7 +320,10 @@ export async function handleDeletedFiles(
       // Recursively check subdirectories first
       for (const entry of entries) {
         const fullPath = join(dir, entry)
-        if (existsSync(fullPath) && readdirSync(fullPath, { withFileTypes: true }).some(e => e.isDirectory())) {
+        if (
+          existsSync(fullPath) &&
+          readdirSync(fullPath, { withFileTypes: true }).some(e => e.isDirectory())
+        ) {
           cleanEmptyDirs(fullPath)
         }
       }

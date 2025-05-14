@@ -79,7 +79,12 @@ export function validateAiMergeConfig(config: TaskConfig): boolean {
 /**
  * Performs AI-powered code merging
  */
-export async function aiMerge(target: string, source: string, model: string, apiKey?: string): Promise<string | null> {
+export async function aiMerge(
+  target: string,
+  source: string,
+  model: string,
+  apiKey?: string
+): Promise<string | null> {
   if (!target || !source) {
     logger.error('Both target and source content are required')
     return null

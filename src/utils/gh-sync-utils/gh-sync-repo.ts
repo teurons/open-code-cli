@@ -112,7 +112,9 @@ export async function processRepo(
       if (existsSync(sourcePath) && statSync(sourcePath).isDirectory()) {
         const removedFiles = await handleDeletedFiles(sourcePath, localPath, cwd, repo)
         if (removedFiles.length > 0) {
-          logger.info(`Removed ${removedFiles.length} files from ${repo} that were deleted in source`)
+          logger.info(
+            `Removed ${removedFiles.length} files from ${repo} that were deleted in source`
+          )
         }
       }
     }
@@ -187,7 +189,9 @@ async function checkIfShouldFetch(
 
       logger.info(`Updates found in repository ${repo}, proceeding with fetch`)
     } else if (force) {
-      logger.info(`Force option enabled for repository ${repo}, proceeding with fetch regardless of updates`)
+      logger.info(
+        `Force option enabled for repository ${repo}, proceeding with fetch regardless of updates`
+      )
     }
   } catch (e) {
     logger.warn(`Failed to check for updates in repository ${repo}: ${(e as Error).message}`)
@@ -201,7 +205,12 @@ async function checkIfShouldFetch(
 /**
  * Collects sync operations for all files in a repository
  */
-function collectSyncOperations(files: FetchFile[], tempDir: string, cwd: string, repo: string): FileSyncOperation[] {
+function collectSyncOperations(
+  files: FetchFile[],
+  tempDir: string,
+  cwd: string,
+  repo: string
+): FileSyncOperation[] {
   const syncOperations: FileSyncOperation[] = []
 
   // Process each file in the repository
@@ -226,7 +235,9 @@ function collectSyncOperations(files: FetchFile[], tempDir: string, cwd: string,
     try {
       processSingleFile(sourcePath, localPath, tempDir, cwd, repo, syncOperations)
     } catch (e) {
-      throw new Error(`Failed to process from ${repo}/${normalizedSource} (relative path): ${(e as Error).message}`)
+      throw new Error(
+        `Failed to process from ${repo}/${normalizedSource} (relative path): ${(e as Error).message}`
+      )
     }
   }
 
@@ -335,7 +346,10 @@ function updateTrackerWithLatestData(
     // Remove any existing redundant path properties
     if (trackerConfig.repos[repo]?.files) {
       for (const filePath in trackerConfig.repos[repo].files) {
-        const fileData = trackerConfig.repos[repo].files[filePath] as unknown as Record<string, unknown>
+        const fileData = trackerConfig.repos[repo].files[filePath] as unknown as Record<
+          string,
+          unknown
+        >
         if (fileData && fileData.path) {
           delete fileData.path
         }

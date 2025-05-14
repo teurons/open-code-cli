@@ -54,7 +54,10 @@ export function syncForkWithSource(tempDir: string, sourceRepo: string): boolean
  * Commits changes to the forked repository
  * @returns An object with success status and whether changes were actually committed
  */
-export function commitChanges(tempDir: string, commitMessage: string): { success: boolean; changesCommitted: boolean } {
+export function commitChanges(
+  tempDir: string,
+  commitMessage: string
+): { success: boolean; changesCommitted: boolean } {
   try {
     logger.info('Committing changes to forked repository')
 

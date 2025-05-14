@@ -28,13 +28,19 @@ export async function handleContributeCommand(options: ContributeOptions): Promi
     const { isInstalled, isAuthenticated } = checkGitHubCli()
 
     if (!isInstalled) {
-      logger.error(red('GitHub CLI (gh) is not installed. Please install it to use the contribute command.'))
+      logger.error(
+        red('GitHub CLI (gh) is not installed. Please install it to use the contribute command.')
+      )
       logger.info('You can install it from: https://cli.github.com/manual/installation')
       process.exit(1)
     }
 
     if (!isAuthenticated) {
-      logger.error(red('GitHub CLI (gh) is not authenticated. Please authenticate it to use the contribute command.'))
+      logger.error(
+        red(
+          'GitHub CLI (gh) is not authenticated. Please authenticate it to use the contribute command.'
+        )
+      )
       logger.info('You can authenticate by running: gh auth login')
       process.exit(1)
     }
@@ -44,7 +50,9 @@ export async function handleContributeCommand(options: ContributeOptions): Promi
 
     // Check if tracker file exists
     if (!existsSync(trackerPath)) {
-      logger.error(red('Tracker file not found. Please run gh-sync first to create a tracker file.'))
+      logger.error(
+        red('Tracker file not found. Please run gh-sync first to create a tracker file.')
+      )
       process.exit(1)
     }
 
@@ -54,7 +62,11 @@ export async function handleContributeCommand(options: ContributeOptions): Promi
     // Find repos with forkRepo
     const reposWithFork = Object.entries(trackerConfig.repos)
       .filter(([_, repoData]) => repoData.forkRepo)
-      .map(([repo, repoData]) => ({ repo, forkRepo: repoData.forkRepo!, filePaths: repoData.filePaths }))
+      .map(([repo, repoData]) => ({
+        repo,
+        forkRepo: repoData.forkRepo!,
+        filePaths: repoData.filePaths,
+      }))
 
     if (reposWithFork.length === 0) {
       logger.error(red('No repositories with fork found in tracker'))
@@ -83,7 +95,9 @@ export async function handleContributeCommand(options: ContributeOptions): Promi
       // Check if we have an existing PR for this repo
       if (repoData?.pullRequest) {
         const prInfo = repoData.pullRequest
-        logger.info(`Found existing PR #${prInfo.prNumber} for ${repo} using branch ${prInfo.branchName}`)
+        logger.info(
+          `Found existing PR #${prInfo.prNumber} for ${repo} using branch ${prInfo.branchName}`
+        )
 
         // Check if the PR is still open
         const currentPRStatus = getPullRequestStatus(repo, prInfo.prNumber)

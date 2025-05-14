@@ -21,7 +21,9 @@ export function validateDependencies(depends: unknown): void {
  */
 export function validateReposConfiguration(repos: unknown[]): void {
   if (!repos || !Array.isArray(repos) || repos.length === 0) {
-    throw new Error('No repositories provided. The repos field must be an array of repository groups.')
+    throw new Error(
+      'No repositories provided. The repos field must be an array of repository groups.'
+    )
   }
 }
 

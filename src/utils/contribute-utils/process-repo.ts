@@ -28,7 +28,9 @@ interface ProcessRepositoryOptions {
 /**
  * Process a repository and create or update a PR
  */
-export async function processRepositoryAndCreatePR(options: ProcessRepositoryOptions): Promise<void> {
+export async function processRepositoryAndCreatePR(
+  options: ProcessRepositoryOptions
+): Promise<void> {
   const {
     repo,
     forkRepo,
@@ -96,7 +98,15 @@ export async function processRepositoryAndCreatePR(options: ProcessRepositoryOpt
 
   // 7. Create PR if needed
   if (!updateExistingPR) {
-    const prResult = createPullRequest(tempDir, repo, forkRepo, branchName, prTitle, updatedPrBody, dryRun)
+    const prResult = createPullRequest(
+      tempDir,
+      repo,
+      forkRepo,
+      branchName,
+      prTitle,
+      updatedPrBody,
+      dryRun
+    )
 
     if (prResult.success && prResult.prUrl) {
       logger.info(`Successfully created PR for ${repo}: ${prResult.prUrl}`)

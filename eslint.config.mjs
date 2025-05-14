@@ -89,7 +89,11 @@ export default defineConfig([
     '**/.yarn',
   ]),
   {
-    extends: compat.extends('eslint:recommended', 'plugin:@typescript-eslint/recommended', 'prettier'),
+    extends: compat.extends(
+      'eslint:recommended',
+      'plugin:@typescript-eslint/recommended',
+      'prettier'
+    ),
 
     plugins: {
       '@typescript-eslint': typescriptEslint,

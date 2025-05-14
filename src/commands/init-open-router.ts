@@ -40,5 +40,7 @@ export async function handler(argv: InitOpenRouterArgv) {
   logger.log(`\nOpenRouter configuration ${green('successfully')} saved!`)
   logger.log(`Default model: ${bold(model)}`)
   logger.log(`API key: ${bold('********')}`)
-  logger.log(`\nYou can now use OpenRouter in your workflows without providing the API key each time.`)
+  logger.log(
+    `\nYou can now use OpenRouter in your workflows without providing the API key each time.`
+  )
 }

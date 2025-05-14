@@ -13,7 +13,9 @@ import { escapeShellArg } from './file-utils'
  * @returns The latest commit hash
  */
 export function getLatestCommitHash(repo: string, branch: string): string {
-  return execSync(`git ls-remote https://github.com/${repo}.git ${branch} | cut -f1`).toString().trim()
+  return execSync(`git ls-remote https://github.com/${repo}.git ${branch} | cut -f1`)
+    .toString()
+    .trim()
 }
 
 /**
@@ -22,7 +24,10 @@ export function getLatestCommitHash(repo: string, branch: string): string {
  * @param branch The branch name
  * @returns The path to the temporary directory and a cleanup function
  */
-export function downloadRepository(repo: string, branch: string): { tempDir: string; cleanup: () => void } {
+export function downloadRepository(
+  repo: string,
+  branch: string
+): { tempDir: string; cleanup: () => void } {
   const tempDir = join(tmpdir(), `gh-sync-${randomUUID()}`)
   mkdirSync(tempDir, { recursive: true })
 

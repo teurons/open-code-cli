@@ -63,7 +63,9 @@ export function getOpenRouterApiKey(): string {
 /**
  * Gets the OpenRouter model from config file or returns default
  */
-export function getOpenRouterModel(defaultModel = 'mistralai/mistral-small-3.1-24b-instruct:free'): string {
+export function getOpenRouterModel(
+  defaultModel = 'mistralai/mistral-small-3.1-24b-instruct:free'
+): string {
   const config = readOpenRouterConfig()
   return config?.model || defaultModel
 }

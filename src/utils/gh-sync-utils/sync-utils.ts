@@ -40,7 +40,14 @@ export async function executeSyncOperations(
 
     try {
       // Determine what action to take
-      const actionResult = actionOnFile(sourcePath, localPath, repo, relativeLocalPath, trackerConfig, sourceCommitHash)
+      const actionResult = actionOnFile(
+        sourcePath,
+        localPath,
+        repo,
+        relativeLocalPath,
+        trackerConfig,
+        sourceCommitHash
+      )
 
       logger.info(
         `Action for ${relativeLocalPath}: ${actionResult.action} and source: ${actionResult.sourceFileHash} local: ${actionResult.localFileHash} tracker: ${actionResult.trackerFileHash}`
@@ -225,7 +232,11 @@ export function generateSyncSummary(results: FileSyncResult[]): SyncSummary {
  * @param isRepoLevel Whether this is a repository-level summary (true) or overall summary (false)
  * @param repoName Optional repository name for repo-level summaries
  */
-export function logSyncSummary(summary: SyncSummary, isRepoLevel: boolean = false, repoName?: string): void {
+export function logSyncSummary(
+  summary: SyncSummary,
+  isRepoLevel: boolean = false,
+  repoName?: string
+): void {
   const scope = isRepoLevel && repoName ? `Repository ${repoName}` : 'Overall'
 
   // Only log action breakdown, not the confusing summary line
@@ -236,7 +247,9 @@ export function logSyncSummary(summary: SyncSummary, isRepoLevel: boolean = fals
   if (summary.failCount > 0) {
     logger.warn(`${isRepoLevel ? 'Files' : 'Files across all repositories'} with issues:`)
     summary.failedFiles.forEach(r => {
-      const path = isRepoLevel ? r.operation.relativeLocalPath : `${r.operation.repo}/${r.operation.relativeLocalPath}`
+      const path = isRepoLevel
+        ? r.operation.relativeLocalPath
+        : `${r.operation.repo}/${r.operation.relativeLocalPath}`
       logger.warn(`- ${path}: ${r.actionResult.action} - ${r.syncResult.message}`)
     })
   }

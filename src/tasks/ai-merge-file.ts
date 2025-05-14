@@ -23,7 +23,9 @@ export class AiMergeFileTask implements Task {
     const model = configModel || getOpenRouterModel()
 
     // Get API key from config, context, environment variable, or stored configuration
-    let apiKey = configApiKey ? context.replaceVariables(configApiKey) : process.env.OPENROUTER_API_KEY || ''
+    let apiKey = configApiKey
+      ? context.replaceVariables(configApiKey)
+      : process.env.OPENROUTER_API_KEY || ''
 
     // If API key is not provided in the task or environment, try to get it from the stored configuration
     if (!apiKey) {
@@ -90,7 +92,12 @@ export class AiMergeFileTask implements Task {
     }
   }
 
-  private async performAiMerge(target: string, source: string, model: string, apiKey?: string): Promise<string | null> {
+  private async performAiMerge(
+    target: string,
+    source: string,
+    model: string,
+    apiKey?: string
+  ): Promise<string | null> {
     return aiMerge(target, source, model, apiKey)
   }
 

@@ -69,12 +69,20 @@ export async function executeContributeSyncOperations(
   const results: ContributeSyncResult[] = []
 
   for (const operation of operations) {
-    const { absoluteLocalPath, absoluteSourcePath, relativeLocalPath, relativeSourcePath, repo, operationType } =
-      operation
+    const {
+      absoluteLocalPath,
+      absoluteSourcePath,
+      relativeLocalPath,
+      relativeSourcePath,
+      repo,
+      operationType,
+    } = operation
 
     try {
       if (dryRun) {
-        logger.info(`[DRY RUN] Would ${operationType} ${relativeLocalPath} to ${relativeSourcePath}`)
+        logger.info(
+          `[DRY RUN] Would ${operationType} ${relativeLocalPath} to ${relativeSourcePath}`
+        )
         results.push({
           operation,
           success: true,

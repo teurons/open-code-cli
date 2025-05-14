@@ -34,7 +34,14 @@ export function collectContributeSyncOperations(
 
     if (existsSync(localFullPath)) {
       if (statSync(localFullPath).isDirectory()) {
-        collectDirectoryOperations(localFullPath, sourceFullPath, cwd, tempDir, repo, syncOperations)
+        collectDirectoryOperations(
+          localFullPath,
+          sourceFullPath,
+          cwd,
+          tempDir,
+          repo,
+          syncOperations
+        )
       } else {
         addFileToSyncOperations(localFullPath, sourceFullPath, cwd, tempDir, repo, syncOperations)
       }

@@ -91,7 +91,11 @@ export function writeTrackerConfig(directory: string, config: TrackerConfig): vo
  * Gets the last synced commit hash for a repository
  * Returns null if the repository hasn't been synced before
  */
-export function getLastSyncedCommit(directory: string, repo: string, branch: string): string | null {
+export function getLastSyncedCommit(
+  directory: string,
+  repo: string,
+  branch: string
+): string | null {
   const config = readTrackerConfig(directory)
 
   const repoData = config.repos[repo]
@@ -106,7 +110,12 @@ export function getLastSyncedCommit(directory: string, repo: string, branch: str
  * Checks if a repository needs to be synced by comparing the latest commit hash
  * with the last synced commit hash
  */
-export function needsSync(directory: string, repo: string, branch: string, latestCommitHash: string): boolean {
+export function needsSync(
+  directory: string,
+  repo: string,
+  branch: string,
+  latestCommitHash: string
+): boolean {
   const lastSyncedCommit = getLastSyncedCommit(directory, repo, branch)
 
   // If never synced before or commit hash is different, sync is needed
