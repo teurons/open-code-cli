@@ -1,0 +1,12 @@
+{
+  "workflow": [
+    {
+      "task": "contribute",
+      "branchName": "feature/my-contribution",
+      "commitMessage": "feat: add new feature",
+      "prTitle": "Feature: Add new functionality",
+      "prBody": "This PR adds new functionality to the project.\n\n- Added feature A\n- Fixed issue B\n- Improved performance of C",
+      "dryRun": false
+    }
+  ]
+}
