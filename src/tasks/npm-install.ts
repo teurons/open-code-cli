@@ -94,7 +94,7 @@ export class NpmInstallTask implements Task {
     return (
       typeof config.packages === 'undefined' ||
       typeof config.packages === 'string' ||
-      (Array.isArray(config.packages) && config.packages.every((pkg) => typeof pkg === 'string'))
+      (Array.isArray(config.packages) && config.packages.every(pkg => typeof pkg === 'string'))
     )
   }
 }

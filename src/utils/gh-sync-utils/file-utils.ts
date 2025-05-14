@@ -51,7 +51,7 @@ export function actionOnFile(
   repo: string,
   relativeLocalPath: string,
   trackerConfig: TrackerConfig,
-  sourceCommitHash?: string,
+  sourceCommitHash?: string
 ): FileActionResult {
   // If local file doesn't exist, we need to copy it
   if (!existsSync(localPath)) {
@@ -187,7 +187,7 @@ export async function handleDeletedFiles(
   sourceDir: string,
   localDir: string,
   cwd?: string,
-  repo?: string,
+  repo?: string
 ): Promise<string[]> {
   const removedFiles: string[] = []
 
@@ -201,7 +201,7 @@ export async function handleDeletedFiles(
   const collectSourceFiles = (dir: string, basePath: string) => {
     if (!existsSync(dir)) return
 
-    readdirSync(dir, { withFileTypes: true }).forEach((entry) => {
+    readdirSync(dir, { withFileTypes: true }).forEach(entry => {
       const fullPath = join(dir, entry.name)
       const relativePath = relative(basePath, fullPath)
 
@@ -231,7 +231,7 @@ export async function handleDeletedFiles(
   const collectFilesToDelete = (dir: string, basePath: string) => {
     if (!existsSync(dir)) return
 
-    readdirSync(dir, { withFileTypes: true }).forEach((entry) => {
+    readdirSync(dir, { withFileTypes: true }).forEach(entry => {
       const fullPath = join(dir, entry.name)
       const relativePath = relative(basePath, fullPath)
 
@@ -283,7 +283,7 @@ export async function handleDeletedFiles(
     filesToRemove = filesToDelete
   } else if (deleteOption === 'Select files to delete') {
     // Prepare options for multiselect
-    const options = filesToDelete.map((file) => file.relativePath)
+    const options = filesToDelete.map(file => file.relativePath)
 
     const selectedFiles = await logger.prompt('Select files to delete:', {
       type: 'multiselect',
@@ -292,7 +292,7 @@ export async function handleDeletedFiles(
 
     if (Array.isArray(selectedFiles) && selectedFiles.length > 0) {
       // Filter files based on selection
-      filesToRemove = filesToDelete.filter((file) => selectedFiles.includes(file.relativePath))
+      filesToRemove = filesToDelete.filter(file => selectedFiles.includes(file.relativePath))
     } else {
       logger.info('No files selected for deletion.')
       return removedFiles
@@ -320,7 +320,7 @@ export async function handleDeletedFiles(
       // Recursively check subdirectories first
       for (const entry of entries) {
         const fullPath = join(dir, entry)
-        if (existsSync(fullPath) && readdirSync(fullPath, { withFileTypes: true }).some((e) => e.isDirectory())) {
+        if (existsSync(fullPath) && readdirSync(fullPath, { withFileTypes: true }).some(e => e.isDirectory())) {
           cleanEmptyDirs(fullPath)
         }
       }
@@ -349,7 +349,7 @@ export function syncDirectoryChanges(
   syncOps: FileSyncOperation[],
   tempDir?: string,
   cwd?: string,
-  repo?: string,
+  repo?: string
 ): void {
   // Create local directory if needed
   if (!existsSync(localDir)) {
@@ -358,7 +358,7 @@ export function syncDirectoryChanges(
 
   try {
     // Process each entry in the directory
-    readdirSync(sourceDir, { withFileTypes: true }).forEach((entry) => {
+    readdirSync(sourceDir, { withFileTypes: true }).forEach(entry => {
       const sourcePath = join(sourceDir, entry.name)
       const localPath = join(localDir, entry.name)
 

@@ -77,7 +77,7 @@ export class AiModifyFileTask implements Task {
     content: string,
     instruction: string,
     model: string,
-    apiKey?: string,
+    apiKey?: string
   ): Promise<string | null> {
     if (!content) {
       logger.error('File content is required')
@@ -87,7 +87,7 @@ export class AiModifyFileTask implements Task {
     try {
       if (!apiKey) {
         throw new Error(
-          'OpenRouter API key is required. Set it in the task config, context, or as OPENROUTER_API_KEY environment variable.',
+          'OpenRouter API key is required. Set it in the task config, context, or as OPENROUTER_API_KEY environment variable.'
         )
       }
 

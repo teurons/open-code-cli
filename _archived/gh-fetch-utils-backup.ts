@@ -108,7 +108,7 @@ export function actionOnFile(
   localPath: string,
   repo: string,
   relativeFilePath: string,
-  trackerConfig: TrackerConfig,
+  trackerConfig: TrackerConfig
 ): FileActionResult {
   // If local file doesn't exist, we need to copy it
   if (!existsSync(localPath)) {
@@ -274,7 +274,7 @@ export interface RepoProcessResult {
  */
 export function executeSyncOperations(
   operations: FileSyncOperation[],
-  trackerConfig: TrackerConfig,
+  trackerConfig: TrackerConfig
 ): {
   updatedFiles: Record<string, Record<string, { hash: string; syncedAt: string }>>
   results: FileSyncResult[]
@@ -313,7 +313,7 @@ export function executeSyncOperations(
       `Action for ${op.relativeLocalPath}: ${action} | ` +
         `Source: ${sourceFileHash.substring(0, 8)} | ` +
         `Local: ${localFileHash.substring(0, 8) || 'N/A'} | ` +
-        `Tracker: ${trackerFileHash ? trackerFileHash.substring(0, 8) : 'N/A'}`,
+        `Tracker: ${trackerFileHash ? trackerFileHash.substring(0, 8) : 'N/A'}`
     )
 
     // Process the file based on the determined action
@@ -357,7 +357,7 @@ export function executeSyncOperations(
           message: `Needs manual merge`,
         }
         logger.warn(
-          `Both remote and local changes detected for ${op.relativeSourcePath}. Consider using ai_merge_file task.`,
+          `Both remote and local changes detected for ${op.relativeSourcePath}. Consider using ai_merge_file task.`
         )
         break
 
@@ -385,12 +385,12 @@ export function executeSyncOperations(
  * @returns Summary object with counts and details
  */
 export function generateSyncSummary(results: FileSyncResult[]): SyncSummary {
-  const successCount = results.filter((r) => r.syncResult.success).length
+  const successCount = results.filter(r => r.syncResult.success).length
   const failCount = results.length - successCount
-  const copyCount = results.filter((r) => r.actionResult.action === FileAction.COPY).length
-  const noneCount = results.filter((r) => r.actionResult.action === FileAction.NONE).length
-  const mergeCount = results.filter((r) => r.actionResult.action === FileAction.MERGE).length
-  const failedFiles = results.filter((r) => !r.syncResult.success)
+  const copyCount = results.filter(r => r.actionResult.action === FileAction.COPY).length
+  const noneCount = results.filter(r => r.actionResult.action === FileAction.NONE).length
+  const mergeCount = results.filter(r => r.actionResult.action === FileAction.MERGE).length
+  const failedFiles = results.filter(r => !r.syncResult.success)
 
   return {
     totalFiles: results.length,
@@ -413,15 +413,15 @@ export function logSyncSummary(summary: SyncSummary, isRepoLevel: boolean = fals
   const scope = isRepoLevel && repoName ? `Repository ${repoName}` : 'Overall'
 
   logger.info(
-    `${scope} sync summary: ${summary.successCount} files synced successfully, ${summary.failCount} files with issues`,
+    `${scope} sync summary: ${summary.successCount} files synced successfully, ${summary.failCount} files with issues`
   )
   logger.info(
-    `${scope} action breakdown: ${summary.copyCount} copied, ${summary.noneCount} unchanged, ${summary.mergeCount} need merge`,
+    `${scope} action breakdown: ${summary.copyCount} copied, ${summary.noneCount} unchanged, ${summary.mergeCount} need merge`
   )
 
   if (summary.failCount > 0) {
     logger.warn(`${isRepoLevel ? 'Files' : 'Files across all repositories'} with issues:`)
-    summary.failedFiles.forEach((r) => {
+    summary.failedFiles.forEach(r => {
       const path = isRepoLevel ? r.operation.relativeLocalPath : `${r.operation.repo}/${r.operation.relativeLocalPath}`
       logger.warn(`- ${path}: ${r.actionResult.action} - ${r.syncResult.message}`)
     })
@@ -443,7 +443,7 @@ export function syncDirectoryChanges(
   syncOps: FileSyncOperation[],
   tempDir?: string,
   cwd?: string,
-  repo?: string,
+  repo?: string
 ): void {
   // Create local directory if needed
   if (!existsSync(localDir)) {
@@ -452,7 +452,7 @@ export function syncDirectoryChanges(
 
   try {
     // Process each entry in the directory
-    readdirSync(sourceDir, { withFileTypes: true }).forEach((entry) => {
+    readdirSync(sourceDir, { withFileTypes: true }).forEach(entry => {
       const sourcePath = join(sourceDir, entry.name)
       const localPath = join(localDir, entry.name)
 
@@ -517,7 +517,7 @@ export function validateGhSyncConfig(config: CommonTaskConfig): boolean {
           typeof file === 'object' &&
           file !== null &&
           typeof (file as Record<string, unknown>).source === 'string' &&
-          typeof (file as Record<string, unknown>).local === 'string',
+          typeof (file as Record<string, unknown>).local === 'string'
       )
     })
   )

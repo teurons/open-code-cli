@@ -127,7 +127,7 @@ export function getLastSyncedFileHash(
   directory: string,
   repo: string,
   filePath: string,
-  trackerConfig?: TrackerConfig,
+  trackerConfig?: TrackerConfig
 ): string | null {
   // Use provided tracker config or read from disk
   const config = trackerConfig || readTrackerConfig(directory)

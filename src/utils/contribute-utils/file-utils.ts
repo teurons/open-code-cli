@@ -12,7 +12,7 @@ export function collectContributeSyncOperations(
   filePaths: FetchFile[],
   tempDir: string,
   cwd: string,
-  repo: string,
+  repo: string
 ): ContributeSyncOperation[] {
   const syncOperations: ContributeSyncOperation[] = []
 
@@ -46,7 +46,7 @@ function collectDirectoryOperations(
   cwd: string,
   tempDir: string,
   repo: string,
-  syncOperations: ContributeSyncOperation[],
+  syncOperations: ContributeSyncOperation[]
 ): void {
   // Ensure source directory exists
   if (!existsSync(sourceDirPath)) {
@@ -77,7 +77,7 @@ function addFileToSyncOperations(
   cwd: string,
   tempDir: string,
   repo: string,
-  syncOperations: ContributeSyncOperation[],
+  syncOperations: ContributeSyncOperation[]
 ): void {
   const relativeLocalPath = relative(cwd, localFilePath)
   const relativeSourcePath = relative(tempDir, sourceFilePath)
@@ -96,7 +96,7 @@ function addFileToSyncOperations(
  */
 export async function executeContributeSyncOperations(
   operations: ContributeSyncOperation[],
-  dryRun: boolean,
+  dryRun: boolean
 ): Promise<ContributeSyncResult[]> {
   const results: ContributeSyncResult[] = []
 
@@ -152,9 +152,9 @@ export function generateContributeSyncSummary(results: ContributeSyncResult[]): 
   totalCount: number
 } {
   return {
-    copyCount: results.filter((r) => r.success && r.action === 'copy').length,
-    skipCount: results.filter((r) => r.success && r.action === 'skip').length,
-    failCount: results.filter((r) => !r.success).length,
+    copyCount: results.filter(r => r.success && r.action === 'copy').length,
+    skipCount: results.filter(r => r.success && r.action === 'skip').length,
+    failCount: results.filter(r => !r.success).length,
     totalCount: results.length,
   }
 }
@@ -170,7 +170,7 @@ export function logContributeSyncSummary(
     totalCount: number
   },
   isRepoLevel: boolean,
-  repoName?: string,
+  repoName?: string
 ): void {
   const { copyCount, skipCount, failCount, totalCount } = summary
 
@@ -182,6 +182,6 @@ export function logContributeSyncSummary(
   }
 
   logger.info(
-    `${prefix}Contribute summary: ${copyCount} copied, ${skipCount} skipped, ${failCount} failed, ${totalCount} total`,
+    `${prefix}Contribute summary: ${copyCount} copied, ${skipCount} skipped, ${failCount} failed, ${totalCount} total`
   )
 }

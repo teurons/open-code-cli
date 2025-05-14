@@ -15,7 +15,7 @@ import { getOpenRouterApiKey, getOpenRouterModel } from '../config'
 export async function executeSyncOperations(
   operations: FileSyncOperation[],
   trackerConfig: TrackerConfig,
-  sourceCommitHash?: string,
+  sourceCommitHash?: string
 ): Promise<{
   updatedFiles: Record<
     string,
@@ -43,7 +43,7 @@ export async function executeSyncOperations(
       const actionResult = actionOnFile(sourcePath, localPath, repo, relativeLocalPath, trackerConfig, sourceCommitHash)
 
       logger.info(
-        `Action for ${relativeLocalPath}: ${actionResult.action} and source: ${actionResult.sourceFileHash} local: ${actionResult.localFileHash} tracker: ${actionResult.trackerFileHash}`,
+        `Action for ${relativeLocalPath}: ${actionResult.action} and source: ${actionResult.sourceFileHash} local: ${actionResult.localFileHash} tracker: ${actionResult.trackerFileHash}`
       )
 
       // Execute the action
@@ -230,12 +230,12 @@ export function logSyncSummary(summary: SyncSummary, isRepoLevel: boolean = fals
 
   // Only log action breakdown, not the confusing summary line
   logger.info(
-    `${scope} action breakdown: ${summary.copyCount} copied, ${summary.noneCount} unchanged, ${summary.mergeCount} need merge`,
+    `${scope} action breakdown: ${summary.copyCount} copied, ${summary.noneCount} unchanged, ${summary.mergeCount} need merge`
   )
 
   if (summary.failCount > 0) {
     logger.warn(`${isRepoLevel ? 'Files' : 'Files across all repositories'} with issues:`)
-    summary.failedFiles.forEach((r) => {
+    summary.failedFiles.forEach(r => {
       const path = isRepoLevel ? r.operation.relativeLocalPath : `${r.operation.repo}/${r.operation.relativeLocalPath}`
       logger.warn(`- ${path}: ${r.actionResult.action} - ${r.syncResult.message}`)
     })

@@ -51,7 +51,7 @@ export interface RepoGroup {
  */
 export async function processRepo(
   repoGroup: RepoGroup,
-  cwd: string,
+  cwd: string
 ): Promise<{
   repo: string
   results: FileSyncResult[]
@@ -150,7 +150,7 @@ export async function processRepo(
         trackerConfig,
         cwd,
         repoGroup.files,
-        forkRepo,
+        forkRepo
       )
     }
   }
@@ -164,7 +164,7 @@ async function checkIfShouldFetch(
   branch: string,
   sync: boolean,
   force: boolean,
-  trackerConfig: TrackerConfig,
+  trackerConfig: TrackerConfig
 ): Promise<{ shouldFetch: boolean; latestCommitHash: string }> {
   let shouldFetch = true
   let latestCommitHash = ''
@@ -242,7 +242,7 @@ function processSingleFile(
   tempDir: string,
   cwd: string,
   repo: string,
-  syncOperations: FileSyncOperation[],
+  syncOperations: FileSyncOperation[]
 ): void {
   // Process based on whether it's a file or directory
   const stats = statSync(sourcePath)
@@ -263,7 +263,7 @@ function addFileToSyncOperations(
   tempDir: string,
   cwd: string,
   repo: string,
-  syncOperations: FileSyncOperation[],
+  syncOperations: FileSyncOperation[]
 ): void {
   const relativeSourcePath = relative(tempDir, sourcePath)
   const relativeLocalPath = relative(cwd, localPath)
@@ -291,7 +291,7 @@ function updateTrackerWithLatestData(
   trackerConfig: TrackerConfig,
   cwd: string,
   filePaths: FetchFile[],
-  forkRepo?: string,
+  forkRepo?: string
 ): void {
   logger.info(`Updating sync data for repository ${repo}`)
 

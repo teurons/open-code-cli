@@ -189,7 +189,7 @@ export function createPullRequest(
   branchName: string,
   prTitle: string,
   prBody: string,
-  dryRun: boolean = false,
+  dryRun: boolean = false
 ): { success: boolean; prNumber?: number; prUrl?: string } {
   try {
     // If in dry run mode, just log what would happen and return success

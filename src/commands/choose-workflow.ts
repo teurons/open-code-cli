@@ -100,7 +100,7 @@ export async function handler(argv: ArgumentsCamelCase<ChooseWorkflowArgv>) {
 
     // Convert our tasks to a format that works with consola prompt
     // Using simple strings as options to avoid type conflicts
-    const options = tasks.map((task) => task.title)
+    const options = tasks.map(task => task.title)
 
     // Use the prompt with simple string options
     const result = await logger.prompt('Choose tasks to run:', {
@@ -128,7 +128,7 @@ export async function handler(argv: ArgumentsCamelCase<ChooseWorkflowArgv>) {
 
     // Create a new workflow with only the selected tasks
     const selectedWorkflow: WorkflowConfig = {
-      workflow: selectedIndices.map((index) => config.workflow[index]).filter((task) => task !== undefined), // Filter out any undefined tasks
+      workflow: selectedIndices.map(index => config.workflow[index]).filter(task => task !== undefined), // Filter out any undefined tasks
     }
 
     // Run the selected tasks

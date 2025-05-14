@@ -90,7 +90,7 @@ export class WriteTask implements Task {
         (file: unknown) =>
           typeof file === 'object' &&
           typeof file.path === 'string' &&
-          (typeof file.content === 'string' || typeof file.append === 'string'),
+          (typeof file.content === 'string' || typeof file.append === 'string')
       )
     )
   }

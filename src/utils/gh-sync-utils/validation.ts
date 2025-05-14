@@ -70,7 +70,7 @@ export function validateGhSyncConfig(config: CommonTaskConfig): boolean {
           typeof file === 'object' &&
           file !== null &&
           typeof (file as Record<string, unknown>).source === 'string' &&
-          typeof (file as Record<string, unknown>).local === 'string',
+          typeof (file as Record<string, unknown>).local === 'string'
       )
     })
   )

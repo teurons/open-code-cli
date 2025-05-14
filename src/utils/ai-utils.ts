@@ -88,7 +88,7 @@ export async function aiMerge(target: string, source: string, model: string, api
   try {
     if (!apiKey) {
       throw new Error(
-        'OpenRouter API key is required. Set it in the task config, context, or as OPENROUTER_API_KEY environment variable.',
+        'OpenRouter API key is required. Set it in the task config, context, or as OPENROUTER_API_KEY environment variable.'
       )
     }
 
