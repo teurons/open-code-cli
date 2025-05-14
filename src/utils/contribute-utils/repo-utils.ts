@@ -5,6 +5,7 @@ import { randomUUID } from 'crypto'
 import { mkdirSync } from 'fs'
 import { logger } from '../../logger'
 import { escapeShellArg } from '../gh-sync-utils/file-utils'
+import { PullRequestInfo } from '../tracker'
 
 /**
  * Checks if GitHub CLI is installed and authenticated
@@ -115,6 +116,68 @@ export function pushBranch(tempDir: string, branchName: string): boolean {
 }
 
 /**
+ * Gets the status of a pull request
+ * @returns PR info or null if PR doesn't exist or can't be fetched
+ */
+export function getPullRequestStatus(sourceRepo: string, prNumber: number): PullRequestInfo | null {
+  try {
+    // Use GitHub CLI to get PR status
+    const prCommand = `gh pr view ${prNumber} --repo ${escapeShellArg(sourceRepo)} --json number,headRefName,state,updatedAt`
+    
+    const prOutput = execSync(prCommand, {
+      stdio: 'pipe',
+    }).toString().trim()
+    
+    const prData = JSON.parse(prOutput)
+    
+    return {
+      prNumber: prData.number,
+      branchName: prData.headRefName,
+      status: prData.state === 'OPEN' ? 'open' : (prData.state === 'MERGED' ? 'merged' : 'closed'),
+      lastUpdated: prData.updatedAt
+    }
+  } catch (e) {
+    // PR doesn't exist or can't be fetched
+    return null
+  }
+}
+
+/**
+ * Checks out an existing branch in the forked repository
+ */
+export function checkoutExistingBranch(tempDir: string, branchName: string): boolean {
+  try {
+    logger.info(`Checking out existing branch ${branchName} in forked repository`)
+    execSync(`git checkout ${escapeShellArg(branchName)}`, {
+      stdio: 'inherit',
+      cwd: tempDir,
+    })
+    return true
+  } catch (e) {
+    logger.error(`Failed to checkout branch: ${(e as Error).message}`)
+    return false
+  }
+}
+
+/**
+ * Force pushes changes to the forked repository
+ * This is used when we need to update an existing PR
+ */
+export function forcePushBranch(tempDir: string, branchName: string): boolean {
+  try {
+    logger.info(`Force pushing branch ${branchName} to forked repository`)
+    execSync(`git push -f -u origin ${escapeShellArg(branchName)}`, {
+      stdio: 'inherit',
+      cwd: tempDir,
+    })
+    return true
+  } catch (e) {
+    logger.error(`Failed to force push branch: ${(e as Error).message}`)
+    return false
+  }
+}
+
+/**
  * Creates a pull request from the forked repository to the original repository
  */
 export function createPullRequest(
@@ -140,8 +203,6 @@ export function createPullRequest(
     }
 
     logger.info(`Creating pull request from ${forkRepo}:${branchName} to ${sourceRepo}:main`)
-
-    // Use fork owner with source repo for PR creation
 
     // Create PR using GitHub CLI
     const prCommand = `gh pr create --repo ${escapeShellArg(sourceRepo)} --head ${

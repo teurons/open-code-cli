@@ -17,6 +17,16 @@ export interface FileSyncData {
 }
 
 /**
+ * Interface for pull request information
+ */
+export interface PullRequestInfo {
+  prNumber: number
+  branchName: string
+  status: 'open' | 'closed' | 'merged'
+  lastUpdated: string
+}
+
+/**
  * Interface for repository sync tracking data
  */
 export interface RepoSyncData {
@@ -26,6 +36,7 @@ export interface RepoSyncData {
   forkRepo?: string
   filePaths: FetchFile[]
   files: Record<string, FileSyncData>
+  pullRequest?: PullRequestInfo
 }
 
 /**

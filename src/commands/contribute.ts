@@ -4,7 +4,7 @@ import { existsSync } from 'fs'
 import { join } from 'path'
 import { logger } from '../logger'
 import { bold, green, red } from 'picocolors'
-import { readTrackerConfig } from '../utils/tracker'
+import { readTrackerConfig, writeTrackerConfig } from '../utils/tracker'
 import {
   collectContributeSyncOperations,
   executeContributeSyncOperations,
@@ -17,7 +17,10 @@ import {
   createBranch,
   commitChanges,
   pushBranch,
+  forcePushBranch,
   createPullRequest,
+  getPullRequestStatus,
+  checkoutExistingBranch,
 } from '../utils/contribute-utils/repo-utils'
 
 interface ContributeArgv {
@@ -78,8 +81,8 @@ export async function handler(argv: ArgumentsCamelCase<ContributeArgv>) {
 
     logger.info(`Found ${reposWithFork.length} repositories with fork`)
 
-    // Hardcode PR title and commit message
-    const branchName = `contribute-${new Date().toISOString().split('T')[0]}`
+    // PR details
+    const defaultBranchName = `contribute-${new Date().toISOString().split('T')[0]}`
     const commitMessage = 'feat: contribute changes from local to source'
     const prTitle = 'Contribute changes from local to source'
     const prBody = 'This PR contains changes contributed from local to source.'
@@ -88,14 +91,56 @@ export async function handler(argv: ArgumentsCamelCase<ContributeArgv>) {
     for (const { repo, forkRepo, filePaths } of reposWithFork) {
       logger.info(`Contributing to repository ${repo} using fork ${forkRepo}`)
 
+      // Read current tracker config to check for existing PRs
+      const trackerConfig = readTrackerConfig(cwd)
+      const repoData = trackerConfig.repos[repo]
+      
+      let branchName = defaultBranchName
+      let updateExistingPR = false
+      
+      // Check if we have an existing PR for this repo
+      if (repoData?.pullRequest) {
+        const prInfo = repoData.pullRequest
+        logger.info(`Found existing PR #${prInfo.prNumber} for ${repo} using branch ${prInfo.branchName}`)
+        
+        // Check if the PR is still open
+        const currentPRStatus = getPullRequestStatus(repo, prInfo.prNumber)
+        
+        if (currentPRStatus && currentPRStatus.status === 'open') {
+          // PR is still open, we can update it
+          logger.info(`PR #${prInfo.prNumber} is still open, will update it`)
+          branchName = prInfo.branchName
+          updateExistingPR = true
+        } else {
+          // PR is closed or merged, create a new one
+          logger.info(`PR #${prInfo.prNumber} is ${currentPRStatus?.status || 'not found'}, will create a new PR`)
+        }
+      }
+
       // 1. Clone the forked repo
       const { tempDir, cleanup } = cloneForkRepo(forkRepo)
 
       try {
-        // 2. Create a branch
-        const branchSuccess = createBranch(tempDir, branchName)
+        // 2. Create or checkout branch
+        let branchSuccess = false
+        
+        if (updateExistingPR) {
+          // Try to checkout existing branch
+          branchSuccess = checkoutExistingBranch(tempDir, branchName)
+          if (!branchSuccess) {
+            // If checkout fails, fall back to creating a new branch
+            logger.warn(`Failed to checkout existing branch ${branchName}, will create a new one`)
+            branchName = defaultBranchName
+            updateExistingPR = false
+            branchSuccess = createBranch(tempDir, branchName)
+          }
+        } else {
+          // Create a new branch
+          branchSuccess = createBranch(tempDir, branchName)
+        }
+        
         if (!branchSuccess) {
-          logger.error(`Failed to create branch for ${repo}`)
+          logger.error(`Failed to create/checkout branch for ${repo}`)
           continue
         }
 
@@ -133,20 +178,59 @@ export async function handler(argv: ArgumentsCamelCase<ContributeArgv>) {
           continue
         }
 
-        // 6. Push branch
-        const pushSuccess = pushBranch(tempDir, branchName)
+        // 6. Push branch (force push if updating existing PR)
+        let pushSuccess = false
+        if (updateExistingPR) {
+          pushSuccess = forcePushBranch(tempDir, branchName)
+        } else {
+          pushSuccess = pushBranch(tempDir, branchName)
+        }
+        
         if (!pushSuccess) {
           logger.error(`Failed to push branch for ${repo}`)
           continue
         }
 
-        // 7. Create PR
-        const prResult = createPullRequest(tempDir, repo, forkRepo, branchName, prTitle, prBody, Boolean(argv.dryRun))
+        // 7. Create PR if needed
+        if (!updateExistingPR) {
+          const prResult = createPullRequest(tempDir, repo, forkRepo, branchName, prTitle, prBody, Boolean(argv.dryRun))
 
-        if (prResult.success && prResult.prUrl) {
-          logger.info(`Successfully created PR for ${repo}: ${prResult.prUrl}`)
+          if (prResult.success && prResult.prUrl) {
+            logger.info(`Successfully created PR for ${repo}: ${prResult.prUrl}`)
+            
+            // Update tracker with PR info
+            if (!trackerConfig.repos[repo]) {
+              trackerConfig.repos[repo] = {
+                branch: 'main', // Default branch
+                lastCommitHash: '',
+                syncedAt: new Date().toISOString(),
+                forkRepo,
+                filePaths,
+                files: {}
+              }
+            }
+            
+            trackerConfig.repos[repo].pullRequest = {
+              prNumber: prResult.prNumber!,
+              branchName,
+              status: 'open',
+              lastUpdated: new Date().toISOString()
+            }
+            
+            writeTrackerConfig(cwd, trackerConfig)
+          } else {
+            logger.error(`Failed to create PR for ${repo}`)
+          }
         } else {
-          logger.error(`Failed to create PR for ${repo}`)
+          // We know repoData and pullRequest exist here because updateExistingPR is true
+          const prNumber = repoData?.pullRequest?.prNumber || 0
+          logger.info(`Successfully updated PR #${prNumber} for ${repo}`)
+          
+          // Update last updated timestamp
+          if (trackerConfig.repos[repo] && trackerConfig.repos[repo].pullRequest) {
+            trackerConfig.repos[repo].pullRequest!.lastUpdated = new Date().toISOString()
+            writeTrackerConfig(cwd, trackerConfig)
+          }
         }
       } finally {
         // Clean up
