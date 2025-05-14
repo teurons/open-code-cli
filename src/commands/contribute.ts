@@ -176,7 +176,7 @@ export async function handler(argv: ArgumentsCamelCase<ContributeArgv>) {
         // Generate and log sync summary
         const syncSummary = generateContributeSyncSummary(syncResults)
         logContributeSyncSummary(syncSummary, true, repo)
-        
+
         // Update PR body with sync summary
         prBody += `\n\n### ${repo}\n- ${syncSummary.copyCount} files copied\n- ${syncSummary.deleteCount} files deleted\n- ${syncSummary.skipCount} files skipped`
 

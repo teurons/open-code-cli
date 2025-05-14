@@ -126,7 +126,7 @@ function detectDeletedFilesForContribute(
     const files = readdirSync(dir)
     for (const file of files) {
       const fullPath = join(dir, file)
-      
+
       // Skip .git directory
       if (file === '.git') {
         continue
@@ -144,7 +144,7 @@ function detectDeletedFilesForContribute(
   // Scan the entire source directory
   scanSourceDirectory(tempDir)
   logger.info(`[${repo}] Found ${allSourceFiles.size} files in source repository`)
-  
+
   // Log the first 10 files found (for debugging)
   let count = 0
   for (const [relativePath, _] of allSourceFiles) {
@@ -159,19 +159,19 @@ function detectDeletedFilesForContribute(
   // Now check each file in filePaths to see if it exists locally
   // We'll create a map of all the files we're supposed to be tracking
   const trackedFiles = new Map<string, string>() // Map of source path to local path
-  
+
   for (const filePath of filePaths) {
     const { source, local } = filePath
     const processedSource = context.replaceVariables(source)
     const processedLocal = context.replaceVariables(local)
-    
+
     // Check if this is a directory
     const sourceFullPath = join(tempDir, processedSource)
-    
+
     if (existsSync(sourceFullPath) && statSync(sourceFullPath).isDirectory()) {
       // For directories, we need to track all files within them
       logger.info(`[${repo}] Tracking directory: ${processedSource}`)
-      
+
       // Find all files in this directory from our allSourceFiles map
       for (const [relativePath, _] of allSourceFiles) {
         if (relativePath === processedSource || relativePath.startsWith(processedSource + '/')) {
@@ -187,27 +187,27 @@ function detectDeletedFilesForContribute(
       logger.info(`[${repo}] Tracking file: source=${processedSource}, local=${processedLocal}`)
     }
   }
-  
+
   logger.info(`[${repo}] Tracking ${trackedFiles.size} files for potential deletion`)
 
   // Now check each tracked file to see if it exists locally
   let deletedFilesCount = 0
-  
+
   for (const [sourcePath, localPath] of trackedFiles) {
     const sourceFullPath = join(tempDir, sourcePath)
     const localFullPath = join(cwd, localPath)
-    
+
     // Skip if source file doesn't exist
     if (!existsSync(sourceFullPath)) {
       logger.info(`[${repo}] Source file doesn't exist, skipping: ${sourcePath}`)
       continue
     }
-    
+
     // Check if local file exists
     if (!existsSync(localFullPath)) {
       logger.info(`[${repo}] Detected deleted file: ${sourcePath} (local: ${localPath})`)
       deletedFilesCount++
-      
+
       // Add delete operation
       syncOperations.push({
         absoluteLocalPath: localFullPath,
@@ -224,11 +224,11 @@ function detectDeletedFilesForContribute(
   const newFilePath = 'newfile.md'
   const sourceNewFilePath = join(tempDir, newFilePath)
   const localNewFilePath = join(cwd, newFilePath)
-  
+
   if (existsSync(sourceNewFilePath) && !existsSync(localNewFilePath)) {
     logger.info(`[${repo}] Detected special case deleted file: ${newFilePath}`)
     deletedFilesCount++
-    
+
     syncOperations.push({
       absoluteLocalPath: localNewFilePath,
       absoluteSourcePath: sourceNewFilePath,
@@ -250,14 +250,15 @@ export async function executeContributeSyncOperations(
   dryRun: boolean
 ): Promise<ContributeSyncResult[]> {
   const results: ContributeSyncResult[] = []
-  
+
   // Log summary of operations to be executed
   const copyOps = operations.filter(op => op.operationType === 'copy').length
   const deleteOps = operations.filter(op => op.operationType === 'delete').length
   logger.info(`Executing ${operations.length} operations: ${copyOps} copy, ${deleteOps} delete`)
 
   for (const operation of operations) {
-    const { absoluteLocalPath, absoluteSourcePath, relativeLocalPath, relativeSourcePath, operationType, repo } = operation
+    const { absoluteLocalPath, absoluteSourcePath, relativeLocalPath, relativeSourcePath, operationType, repo } =
+      operation
 
     try {
       if (dryRun) {
@@ -289,7 +290,7 @@ export async function executeContributeSyncOperations(
         } else if (operationType === 'delete') {
           // Delete the file if it exists
           logger.info(`[${repo}] Attempting to delete file: ${absoluteSourcePath}`)
-          
+
           if (existsSync(absoluteSourcePath)) {
             logger.info(`[${repo}] File exists, deleting: ${absoluteSourcePath}`)
             unlinkSync(absoluteSourcePath)
@@ -323,15 +324,17 @@ export async function executeContributeSyncOperations(
       })
     }
   }
-  
+
   // Log summary of results
   const successCopy = results.filter(r => r.success && r.action === 'copy').length
   const successDelete = results.filter(r => r.success && r.action === 'delete').length
   const skipped = results.filter(r => r.success && r.action === 'skip').length
   const failed = results.filter(r => !r.success).length
-  
-  logger.info(`Operations completed: ${successCopy} copied, ${successDelete} deleted, ${skipped} skipped, ${failed} failed`)
-  
+
+  logger.info(
+    `Operations completed: ${successCopy} copied, ${successDelete} deleted, ${skipped} skipped, ${failed} failed`
+  )
+
   return results
 }
 
