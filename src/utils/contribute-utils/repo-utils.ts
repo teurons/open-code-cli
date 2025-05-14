@@ -155,37 +155,37 @@ export function getPullRequestStatus(sourceRepo: string, prNumber: number): Pull
 export function syncForkWithSource(tempDir: string, sourceRepo: string): boolean {
   try {
     logger.info(`Syncing fork with source repository ${sourceRepo}`)
-    
+
     // Add the source repository as a remote
     execSync(`git remote add source https://github.com/${escapeShellArg(sourceRepo)}.git`, {
       stdio: 'pipe',
       cwd: tempDir,
     })
-    
+
     // Fetch from the source repository
     execSync('git fetch source', {
       stdio: 'inherit',
       cwd: tempDir,
     })
-    
+
     // Make sure we're on the main branch
     execSync('git checkout main', {
       stdio: 'inherit',
       cwd: tempDir,
     })
-    
+
     // Merge changes from source/main into the fork's main branch
     execSync('git merge source/main', {
       stdio: 'inherit',
       cwd: tempDir,
     })
-    
+
     // Push the updated main branch to the fork
     execSync('git push origin main', {
       stdio: 'inherit',
       cwd: tempDir,
     })
-    
+
     logger.info('Successfully synced fork with source repository')
     return true
   } catch (e) {
@@ -219,19 +219,19 @@ export function checkoutExistingBranch(tempDir: string, branchName: string): boo
 export function mergeMainIntoCurrentBranch(tempDir: string): boolean {
   try {
     logger.info('Merging main branch into current branch')
-    
+
     // Fetch the latest changes
     execSync('git fetch origin', {
       stdio: 'inherit',
       cwd: tempDir,
     })
-    
+
     // Merge origin/main into the current branch
     execSync('git merge origin/main', {
       stdio: 'inherit',
       cwd: tempDir,
     })
-    
+
     logger.info('Successfully merged main branch into current branch')
     return true
   } catch (e) {

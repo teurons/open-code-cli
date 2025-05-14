@@ -87,7 +87,7 @@ export async function handler(argv: ArgumentsCamelCase<ContributeArgv>) {
     const defaultBranchName = `contribute-${new Date().toISOString().split('T')[0]}`
     const commitMessage = 'feat: contribute changes from local to source'
     const prTitle = 'Contribute changes from local to source'
-    const prBody = 'This PR contains changes contributed from local to source.'
+    let prBody = 'This PR contains changes contributed from local to source, including:'
 
     // Process each repository
     for (const { repo, forkRepo, filePaths } of reposWithFork) {
@@ -176,6 +176,9 @@ export async function handler(argv: ArgumentsCamelCase<ContributeArgv>) {
         // Generate and log sync summary
         const syncSummary = generateContributeSyncSummary(syncResults)
         logContributeSyncSummary(syncSummary, true, repo)
+        
+        // Update PR body with sync summary
+        prBody += `\n\n### ${repo}\n- ${syncSummary.copyCount} files copied\n- ${syncSummary.deleteCount} files deleted\n- ${syncSummary.skipCount} files skipped`
 
         // If dry run, skip the rest
         if (argv.dryRun) {
