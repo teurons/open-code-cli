@@ -94,18 +94,18 @@ export async function handler(argv: ArgumentsCamelCase<ContributeArgv>) {
       // Read current tracker config to check for existing PRs
       const trackerConfig = readTrackerConfig(cwd)
       const repoData = trackerConfig.repos[repo]
-      
+
       let branchName = defaultBranchName
       let updateExistingPR = false
-      
+
       // Check if we have an existing PR for this repo
       if (repoData?.pullRequest) {
         const prInfo = repoData.pullRequest
         logger.info(`Found existing PR #${prInfo.prNumber} for ${repo} using branch ${prInfo.branchName}`)
-        
+
         // Check if the PR is still open
         const currentPRStatus = getPullRequestStatus(repo, prInfo.prNumber)
-        
+
         if (currentPRStatus && currentPRStatus.status === 'open') {
           // PR is still open, we can update it
           logger.info(`PR #${prInfo.prNumber} is still open, will update it`)
@@ -123,7 +123,7 @@ export async function handler(argv: ArgumentsCamelCase<ContributeArgv>) {
       try {
         // 2. Create or checkout branch
         let branchSuccess = false
-        
+
         if (updateExistingPR) {
           // Try to checkout existing branch
           branchSuccess = checkoutExistingBranch(tempDir, branchName)
@@ -138,7 +138,7 @@ export async function handler(argv: ArgumentsCamelCase<ContributeArgv>) {
           // Create a new branch
           branchSuccess = createBranch(tempDir, branchName)
         }
-        
+
         if (!branchSuccess) {
           logger.error(`Failed to create/checkout branch for ${repo}`)
           continue
@@ -185,7 +185,7 @@ export async function handler(argv: ArgumentsCamelCase<ContributeArgv>) {
         } else {
           pushSuccess = pushBranch(tempDir, branchName)
         }
-        
+
         if (!pushSuccess) {
           logger.error(`Failed to push branch for ${repo}`)
           continue
@@ -197,7 +197,7 @@ export async function handler(argv: ArgumentsCamelCase<ContributeArgv>) {
 
           if (prResult.success && prResult.prUrl) {
             logger.info(`Successfully created PR for ${repo}: ${prResult.prUrl}`)
-            
+
             // Update tracker with PR info
             if (!trackerConfig.repos[repo]) {
               trackerConfig.repos[repo] = {
@@ -206,17 +206,17 @@ export async function handler(argv: ArgumentsCamelCase<ContributeArgv>) {
                 syncedAt: new Date().toISOString(),
                 forkRepo,
                 filePaths,
-                files: {}
+                files: {},
               }
             }
-            
+
             trackerConfig.repos[repo].pullRequest = {
               prNumber: prResult.prNumber!,
               branchName,
               status: 'open',
-              lastUpdated: new Date().toISOString()
+              lastUpdated: new Date().toISOString(),
             }
-            
+
             writeTrackerConfig(cwd, trackerConfig)
           } else {
             logger.error(`Failed to create PR for ${repo}`)
@@ -225,7 +225,7 @@ export async function handler(argv: ArgumentsCamelCase<ContributeArgv>) {
           // We know repoData and pullRequest exist here because updateExistingPR is true
           const prNumber = repoData?.pullRequest?.prNumber || 0
           logger.info(`Successfully updated PR #${prNumber} for ${repo}`)
-          
+
           // Update last updated timestamp
           if (trackerConfig.repos[repo] && trackerConfig.repos[repo].pullRequest) {
             trackerConfig.repos[repo].pullRequest!.lastUpdated = new Date().toISOString()

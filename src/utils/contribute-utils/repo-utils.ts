@@ -123,18 +123,20 @@ export function getPullRequestStatus(sourceRepo: string, prNumber: number): Pull
   try {
     // Use GitHub CLI to get PR status
     const prCommand = `gh pr view ${prNumber} --repo ${escapeShellArg(sourceRepo)} --json number,headRefName,state,updatedAt`
-    
+
     const prOutput = execSync(prCommand, {
       stdio: 'pipe',
-    }).toString().trim()
-    
+    })
+      .toString()
+      .trim()
+
     const prData = JSON.parse(prOutput)
-    
+
     return {
       prNumber: prData.number,
       branchName: prData.headRefName,
-      status: prData.state === 'OPEN' ? 'open' : (prData.state === 'MERGED' ? 'merged' : 'closed'),
-      lastUpdated: prData.updatedAt
+      status: prData.state === 'OPEN' ? 'open' : prData.state === 'MERGED' ? 'merged' : 'closed',
+      lastUpdated: prData.updatedAt,
     }
   } catch (e) {
     // PR doesn't exist or can't be fetched
