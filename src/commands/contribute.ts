@@ -21,6 +21,8 @@ import {
   createPullRequest,
   getPullRequestStatus,
   checkoutExistingBranch,
+  syncForkWithSource,
+  mergeMainIntoCurrentBranch,
 } from '../utils/contribute-utils/repo-utils'
 
 interface ContributeArgv {
@@ -121,6 +123,13 @@ export async function handler(argv: ArgumentsCamelCase<ContributeArgv>) {
       const { tempDir, cleanup } = cloneForkRepo(forkRepo)
 
       try {
+        // 1.1 Sync fork with source repository to ensure it's up-to-date
+        const syncSuccess = syncForkWithSource(tempDir, repo)
+        if (!syncSuccess) {
+          logger.warn(`Failed to sync fork with source for ${repo}, continuing with potentially outdated code`)
+        } else {
+          logger.info(`Successfully synced fork ${forkRepo} with source ${repo}`)
+        }
         // 2. Create or checkout branch
         let branchSuccess = false
 
@@ -133,6 +142,15 @@ export async function handler(argv: ArgumentsCamelCase<ContributeArgv>) {
             branchName = defaultBranchName
             updateExistingPR = false
             branchSuccess = createBranch(tempDir, branchName)
+          } else {
+            // Branch checkout successful, merge main branch into it to keep it updated
+            logger.info(`Merging main branch into ${branchName} to keep it updated`)
+            const mergeSuccess = mergeMainIntoCurrentBranch(tempDir)
+            if (!mergeSuccess) {
+              logger.warn(`Failed to merge main branch into ${branchName}, continuing with potentially outdated code`)
+            } else {
+              logger.info(`Successfully merged main branch into ${branchName}`)
+            }
           }
         } else {
           // Create a new branch

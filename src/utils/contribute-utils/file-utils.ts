@@ -1,9 +1,9 @@
-import { existsSync, copyFileSync, statSync, mkdirSync, readdirSync } from 'fs'
+import { existsSync, copyFileSync, statSync, mkdirSync, readdirSync, unlinkSync } from 'fs'
 import { dirname, join, relative } from 'path'
 import { logger } from '../../logger'
 import { context } from '../../context'
 import { FetchFile } from '../gh-sync-utils/gh-sync-repo'
-import { ContributeSyncOperation, ContributeSyncResult } from './types'
+import { ContributeSyncOperation, ContributeSyncResult, ContributeOperationType } from './types'
 
 /**
  * Collects sync operations for all files to contribute
@@ -27,12 +27,17 @@ export function collectContributeSyncOperations(
     const localFullPath = join(cwd, processedLocal)
     const sourceFullPath = join(tempDir, processedSource)
 
-    if (statSync(localFullPath).isDirectory()) {
-      collectDirectoryOperations(localFullPath, sourceFullPath, cwd, tempDir, repo, syncOperations)
-    } else {
-      addFileToSyncOperations(localFullPath, sourceFullPath, cwd, tempDir, repo, syncOperations)
+    if (existsSync(localFullPath)) {
+      if (statSync(localFullPath).isDirectory()) {
+        collectDirectoryOperations(localFullPath, sourceFullPath, cwd, tempDir, repo, syncOperations)
+      } else {
+        addFileToSyncOperations(localFullPath, sourceFullPath, cwd, tempDir, repo, syncOperations)
+      }
     }
   }
+
+  // Detect files that exist in source but not in local (deleted files)
+  detectDeletedFilesForContribute(filePaths, tempDir, cwd, repo, syncOperations)
 
   return syncOperations
 }
@@ -77,7 +82,8 @@ function addFileToSyncOperations(
   cwd: string,
   tempDir: string,
   repo: string,
-  syncOperations: ContributeSyncOperation[]
+  syncOperations: ContributeSyncOperation[],
+  operationType: ContributeOperationType = 'copy'
 ): void {
   const relativeLocalPath = relative(cwd, localFilePath)
   const relativeSourcePath = relative(tempDir, sourceFilePath)
@@ -88,7 +94,62 @@ function addFileToSyncOperations(
     relativeLocalPath,
     relativeSourcePath,
     repo,
+    operationType
   })
+}
+
+/**
+ * Detects files that exist in source but have been deleted locally
+ */
+function detectDeletedFilesForContribute(
+  filePaths: FetchFile[],
+  tempDir: string,
+  cwd: string,
+  repo: string,
+  syncOperations: ContributeSyncOperation[]
+): void {
+  // Create a set of all local paths from the filePaths
+  const localPaths = new Set<string>()
+  for (const filePath of filePaths) {
+    const { local } = filePath
+    const processedLocal = context.replaceVariables(local)
+    localPaths.add(processedLocal)
+  }
+
+  // Check each source file to see if it exists locally
+  for (const filePath of filePaths) {
+    const { source } = filePath
+    const processedSource = context.replaceVariables(source)
+    const sourceFullPath = join(tempDir, processedSource)
+
+    // Skip if the source file doesn't exist
+    if (!existsSync(sourceFullPath) || statSync(sourceFullPath).isDirectory()) {
+      continue
+    }
+
+    // Get the relative path from the source
+    const relativeSourcePath = relative(tempDir, sourceFullPath)
+    
+    // Check if this file exists in the local paths
+    const localExists = Array.from(localPaths).some(localPath => {
+      const relativeLocalPath = localPath
+      return relativeLocalPath === relativeSourcePath
+    })
+
+    // If the file doesn't exist locally but does in source, add it as a delete operation
+    if (!localExists) {
+      const localFullPath = join(cwd, relativeSourcePath)
+      
+      syncOperations.push({
+        absoluteLocalPath: localFullPath,
+        absoluteSourcePath: sourceFullPath,
+        relativeLocalPath: relativeSourcePath,
+        relativeSourcePath,
+        repo,
+        operationType: 'delete'
+      })
+    }
+  }
 }
 
 /**
@@ -101,40 +162,61 @@ export async function executeContributeSyncOperations(
   const results: ContributeSyncResult[] = []
 
   for (const operation of operations) {
-    const { absoluteLocalPath, absoluteSourcePath, relativeLocalPath, relativeSourcePath } = operation
+    const { absoluteLocalPath, absoluteSourcePath, relativeLocalPath, relativeSourcePath, operationType } = operation
 
     try {
       if (dryRun) {
-        logger.info(`[DRY RUN] Would copy ${relativeLocalPath} to ${relativeSourcePath}`)
+        logger.info(`[DRY RUN] Would ${operationType} ${relativeLocalPath} to ${relativeSourcePath}`)
         results.push({
           operation,
           success: true,
-          action: 'copy',
+          action: operationType
         })
       } else {
-        // Ensure the directory exists
-        const sourceDir = dirname(absoluteSourcePath)
-        if (!existsSync(sourceDir)) {
-          mkdirSync(sourceDir, { recursive: true })
+        if (operationType === 'copy') {
+          // Ensure the directory exists
+          const sourceDir = dirname(absoluteSourcePath)
+          if (!existsSync(sourceDir)) {
+            mkdirSync(sourceDir, { recursive: true })
+          }
+
+          // Copy the file
+          copyFileSync(absoluteLocalPath, absoluteSourcePath)
+          logger.info(`Copied ${relativeLocalPath} to ${relativeSourcePath}`)
+
+          results.push({
+            operation,
+            success: true,
+            action: 'copy'
+          })
+        } else if (operationType === 'delete') {
+          // Delete the file if it exists
+          if (existsSync(absoluteSourcePath)) {
+            unlinkSync(absoluteSourcePath)
+            logger.info(`Deleted ${relativeSourcePath}`)
+
+            results.push({
+              operation,
+              success: true,
+              action: 'delete'
+            })
+          } else {
+            // File already doesn't exist, mark as success
+            results.push({
+              operation,
+              success: true,
+              action: 'skip'
+            })
+          }
         }
-
-        // Copy the file
-        copyFileSync(absoluteLocalPath, absoluteSourcePath)
-        logger.info(`Copied ${relativeLocalPath} to ${relativeSourcePath}`)
-
-        results.push({
-          operation,
-          success: true,
-          action: 'copy',
-        })
       }
     } catch (error) {
-      logger.error(`Failed to copy ${relativeLocalPath} to ${relativeSourcePath}: ${(error as Error).message}`)
+      logger.error(`Failed to ${operationType} ${relativeLocalPath} to ${relativeSourcePath}: ${(error as Error).message}`)
       results.push({
         operation,
         success: false,
         error: (error as Error).message,
-        action: 'copy',
+        action: operationType
       })
     }
   }
@@ -147,12 +229,14 @@ export async function executeContributeSyncOperations(
  */
 export function generateContributeSyncSummary(results: ContributeSyncResult[]): {
   copyCount: number
+  deleteCount: number
   skipCount: number
   failCount: number
   totalCount: number
 } {
   return {
     copyCount: results.filter(r => r.success && r.action === 'copy').length,
+    deleteCount: results.filter(r => r.success && r.action === 'delete').length,
     skipCount: results.filter(r => r.success && r.action === 'skip').length,
     failCount: results.filter(r => !r.success).length,
     totalCount: results.length,
@@ -165,6 +249,7 @@ export function generateContributeSyncSummary(results: ContributeSyncResult[]): 
 export function logContributeSyncSummary(
   summary: {
     copyCount: number
+    deleteCount: number
     skipCount: number
     failCount: number
     totalCount: number
@@ -172,7 +257,7 @@ export function logContributeSyncSummary(
   isRepoLevel: boolean,
   repoName?: string
 ): void {
-  const { copyCount, skipCount, failCount, totalCount } = summary
+  const { copyCount, deleteCount, skipCount, failCount, totalCount } = summary
 
   const prefix = isRepoLevel && repoName ? `[${repoName}] ` : ''
 
@@ -182,6 +267,6 @@ export function logContributeSyncSummary(
   }
 
   logger.info(
-    `${prefix}Contribute summary: ${copyCount} copied, ${skipCount} skipped, ${failCount} failed, ${totalCount} total`
+    `${prefix}Contribute summary: ${copyCount} copied, ${deleteCount} deleted, ${skipCount} skipped, ${failCount} failed, ${totalCount} total`
   )
 }

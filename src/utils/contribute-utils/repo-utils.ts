@@ -77,23 +77,25 @@ export function createBranch(tempDir: string, branchName: string): boolean {
 export function commitChanges(tempDir: string, commitMessage: string): { success: boolean; changesCommitted: boolean } {
   try {
     logger.info('Committing changes to forked repository')
-    execSync('git add .', { stdio: 'inherit', cwd: tempDir })
 
-    // Check if there are changes to commit
-    const statusOutput = execSync('git status --porcelain', { stdio: 'pipe', cwd: tempDir }).toString().trim()
+    // Check if there are any changes to commit
+    const statusResult = execSync('git status --porcelain', { cwd: tempDir, encoding: 'utf8' })
 
-    if (!statusOutput) {
+    if (!statusResult.trim()) {
+      // No changes to commit
       logger.info('No changes to commit, working tree clean')
-      return { success: true, changesCommitted: false } // No changes to commit
+      return { success: true, changesCommitted: false }
     }
 
-    execSync(`git commit -m ${escapeShellArg(commitMessage)}`, {
-      stdio: 'inherit',
-      cwd: tempDir,
-    })
-    return { success: true, changesCommitted: true } // Changes committed successfully
-  } catch (e) {
-    logger.error(`Failed to commit changes: ${(e as Error).message}`)
+    // Add all changes including deletions
+    execSync('git add --all', { stdio: 'inherit', cwd: tempDir })
+
+    // Commit changes
+    execSync(`git commit -m ${escapeShellArg(commitMessage)}`, { stdio: 'inherit', cwd: tempDir })
+
+    return { success: true, changesCommitted: true }
+  } catch (error) {
+    logger.error(`Failed to commit changes: ${(error as Error).message}`)
     return { success: false, changesCommitted: false }
   }
 }
@@ -145,6 +147,54 @@ export function getPullRequestStatus(sourceRepo: string, prNumber: number): Pull
 }
 
 /**
+ * Syncs a fork with its source repository
+ * @param tempDir Directory where the fork is cloned
+ * @param sourceRepo Source repository (owner/repo)
+ * @returns True if sync was successful
+ */
+export function syncForkWithSource(tempDir: string, sourceRepo: string): boolean {
+  try {
+    logger.info(`Syncing fork with source repository ${sourceRepo}`)
+    
+    // Add the source repository as a remote
+    execSync(`git remote add source https://github.com/${escapeShellArg(sourceRepo)}.git`, {
+      stdio: 'pipe',
+      cwd: tempDir,
+    })
+    
+    // Fetch from the source repository
+    execSync('git fetch source', {
+      stdio: 'inherit',
+      cwd: tempDir,
+    })
+    
+    // Make sure we're on the main branch
+    execSync('git checkout main', {
+      stdio: 'inherit',
+      cwd: tempDir,
+    })
+    
+    // Merge changes from source/main into the fork's main branch
+    execSync('git merge source/main', {
+      stdio: 'inherit',
+      cwd: tempDir,
+    })
+    
+    // Push the updated main branch to the fork
+    execSync('git push origin main', {
+      stdio: 'inherit',
+      cwd: tempDir,
+    })
+    
+    logger.info('Successfully synced fork with source repository')
+    return true
+  } catch (e) {
+    logger.error(`Failed to sync fork with source: ${(e as Error).message}`)
+    return false
+  }
+}
+
+/**
  * Checks out an existing branch in the forked repository
  */
 export function checkoutExistingBranch(tempDir: string, branchName: string): boolean {
@@ -157,6 +207,35 @@ export function checkoutExistingBranch(tempDir: string, branchName: string): boo
     return true
   } catch (e) {
     logger.error(`Failed to checkout branch: ${(e as Error).message}`)
+    return false
+  }
+}
+
+/**
+ * Merges the main branch into the current feature branch
+ * @param tempDir Directory where the repository is cloned
+ * @returns True if merge was successful
+ */
+export function mergeMainIntoCurrentBranch(tempDir: string): boolean {
+  try {
+    logger.info('Merging main branch into current branch')
+    
+    // Fetch the latest changes
+    execSync('git fetch origin', {
+      stdio: 'inherit',
+      cwd: tempDir,
+    })
+    
+    // Merge origin/main into the current branch
+    execSync('git merge origin/main', {
+      stdio: 'inherit',
+      cwd: tempDir,
+    })
+    
+    logger.info('Successfully merged main branch into current branch')
+    return true
+  } catch (e) {
+    logger.error(`Failed to merge main branch: ${(e as Error).message}`)
     return false
   }
 }

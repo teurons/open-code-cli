@@ -3,6 +3,11 @@
 /**
  * Interface for a sync operation from local to source
  */
+/**
+ * Type for the operation type (copy or delete)
+ */
+export type ContributeOperationType = 'copy' | 'delete'
+
 export interface ContributeSyncOperation {
   /** Absolute path to the local file */
   absoluteLocalPath: string
@@ -14,6 +19,8 @@ export interface ContributeSyncOperation {
   relativeSourcePath: string
   /** Repository name */
   repo: string
+  /** Type of operation to perform */
+  operationType: ContributeOperationType
 }
 
 /**
@@ -26,8 +33,8 @@ export interface ContributeSyncResult {
   success: boolean
   /** Error message if the operation failed */
   error?: string
-  /** The action that was performed (copy, skip) */
-  action: 'copy' | 'skip'
+  /** The action that was performed */
+  action: ContributeOperationType | 'skip'
 }
 
 /**
@@ -36,6 +43,8 @@ export interface ContributeSyncResult {
 export interface ContributeSyncSummary {
   /** Number of files copied */
   copyCount: number
+  /** Number of files deleted */
+  deleteCount: number
   /** Number of files skipped */
   skipCount: number
   /** Number of operations that failed */
