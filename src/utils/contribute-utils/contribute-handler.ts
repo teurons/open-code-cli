@@ -67,7 +67,7 @@ export async function handleContributeCommand(options: ContributeOptions): Promi
     const defaultBranchName = `contribute-${new Date().toISOString().split('T')[0]}`
     const commitMessage = 'feat: contribute changes from local to source'
     const prTitle = 'Contribute changes from local to source'
-    let prBody = 'This PR contains changes contributed from local to source, including:'
+    const prBody = 'This PR contains changes contributed from local to source, including:'
 
     // Process each repository
     for (const { repo, forkRepo, filePaths } of reposWithFork) {

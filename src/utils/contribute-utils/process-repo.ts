@@ -6,12 +6,7 @@ import {
   generateContributeSyncSummary,
   logContributeSyncSummary,
 } from './file-utils'
-import {
-  commitChanges,
-  pushBranch,
-  forcePushBranch,
-  createPullRequest,
-} from './repo-utils'
+import { commitChanges, pushBranch, forcePushBranch, createPullRequest } from './repo-utils'
 import { TrackerConfig } from '../tracker'
 import { FetchFile } from '../gh-sync-utils/gh-sync-repo'
 

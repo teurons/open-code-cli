@@ -1,8 +1,8 @@
 import { execSync } from 'child_process'
 import { tmpdir } from 'os'
 import { join } from 'path'
+import { mkdirSync, existsSync } from 'fs'
 import { randomUUID } from 'crypto'
-import { mkdirSync } from 'fs'
 import { logger } from '../../logger'
 import { escapeShellArg } from './file-utils'
 
@@ -28,8 +28,14 @@ export function downloadRepository(repo: string, branch: string): { tempDir: str
 
   // Download the entire repository once
   logger.info(`Downloading repository ${repo} to temporary directory`)
-  const gigetCommand = `npx giget gh:${repo}#${branch} ${escapeShellArg(tempDir)} --force`
-  execSync(gigetCommand, { stdio: 'inherit', cwd: process.cwd() })
+  const cloneCommand = `git clone --depth 1 --branch ${escapeShellArg(branch)} https://github.com/${escapeShellArg(repo)}.git ${escapeShellArg(tempDir)}`
+  execSync(cloneCommand, { stdio: 'inherit', cwd: process.cwd() })
+  
+  // Remove .git directory immediately after cloning
+  const gitDir = join(tempDir, '.git')
+  if (existsSync(gitDir)) {
+    execSync(`rm -rf ${escapeShellArg(gitDir)}`, { stdio: 'pipe' })
+  }
 
   // Return the temp directory and a cleanup function
   return {

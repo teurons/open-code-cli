@@ -69,7 +69,8 @@ export async function executeContributeSyncOperations(
   const results: ContributeSyncResult[] = []
 
   for (const operation of operations) {
-    const { absoluteLocalPath, absoluteSourcePath, relativeLocalPath, relativeSourcePath, repo, operationType } = operation
+    const { absoluteLocalPath, absoluteSourcePath, relativeLocalPath, relativeSourcePath, repo, operationType } =
+      operation
 
     try {
       if (dryRun) {

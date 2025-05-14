@@ -102,15 +102,7 @@ export function detectDeletedFilesForContribute(
         if (!existsSync(localFullPath)) {
           // File exists in source but not in local, add a delete operation
           logger.info(`[${repo}] File deleted locally: ${relativePath}`)
-          addFileToSyncOperations(
-            localFullPath,
-            fullSourcePath,
-            cwd,
-            tempDir,
-            repo,
-            syncOperations,
-            'delete'
-          )
+          addFileToSyncOperations(localFullPath, fullSourcePath, cwd, tempDir, repo, syncOperations, 'delete')
         }
       }
     } else if (existsSync(sourceFullPath) && statSync(sourceFullPath).isFile()) {
@@ -120,15 +112,7 @@ export function detectDeletedFilesForContribute(
       if (!existsSync(localFullPath)) {
         // File exists in source but not in local, add a delete operation
         logger.info(`[${repo}] File deleted locally: ${source}`)
-        addFileToSyncOperations(
-          localFullPath,
-          sourceFullPath,
-          cwd,
-          tempDir,
-          repo,
-          syncOperations,
-          'delete'
-        )
+        addFileToSyncOperations(localFullPath, sourceFullPath, cwd, tempDir, repo, syncOperations, 'delete')
       }
     }
   }
