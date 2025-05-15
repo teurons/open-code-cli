@@ -42,7 +42,12 @@ export function createPullRequest(
   prTitle: string,
   prBody: string,
   dryRun: boolean = false
-): { success: boolean; prNumber?: number; prUrl?: string; alreadyExists?: boolean } {
+): {
+  success: boolean;
+  prNumber?: number;
+  prUrl?: string;
+  alreadyExists?: boolean;
+} {
   try {
     // If in dry run mode, just log what would happen and return success
     if (dryRun) {
@@ -70,9 +75,9 @@ export function createPullRequest(
         cwd: tempDir,
         encoding: "utf8",
       });
-      
+
       const prList = JSON.parse(prListOutput);
-      
+
       if (prList.length > 0) {
         // PR already exists
         const existingPr = prList[0];
@@ -86,7 +91,9 @@ export function createPullRequest(
       }
     } catch (checkError) {
       // Ignore errors checking for existing PRs
-      logger.warn(`Error checking for existing PRs: ${(checkError as Error).message}`);
+      logger.warn(
+        `Error checking for existing PRs: ${(checkError as Error).message}`
+      );
     }
 
     // Create PR using GitHub CLI
@@ -122,11 +129,13 @@ export function createPullRequest(
       const errorMessage = (prError as Error).message;
       if (errorMessage.includes("already exists")) {
         // Extract the PR URL from the error message
-        const urlMatch = errorMessage.match(/https:\/\/github\.com\/[^\/]+\/[^\/]+\/pull\/\d+/);
+        const urlMatch = errorMessage.match(
+          /https:\/\/github\.com\/[^/]+\/[^/]+\/pull\/\d+/
+        );
         if (urlMatch) {
           const prUrl = urlMatch[0];
           const prNumber = prUrl.split("/").pop();
-          
+
           logger.info(`Pull request already exists: ${prUrl}`);
           return {
             success: true,
@@ -136,7 +145,7 @@ export function createPullRequest(
           };
         }
       }
-      
+
       // Re-throw if we couldn't handle the error
       throw prError;
     }

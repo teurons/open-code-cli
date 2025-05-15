@@ -49,7 +49,7 @@ export function checkoutExistingBranch(
     logger.info(
       `Checking out existing branch ${branchName} in forked repository`
     );
-    
+
     try {
       // Try to checkout local branch first
       execSync(`git checkout ${escapeShellArg(branchName)}`, {
@@ -60,14 +60,14 @@ export function checkoutExistingBranch(
     } catch (localCheckoutError) {
       // If local checkout fails, try to checkout from remote
       logger.info(`Local branch not found, trying to checkout from remote`);
-      
+
       try {
         // Fetch the branch from remote
         execSync(`git fetch origin ${escapeShellArg(branchName)}`, {
           stdio: "inherit",
           cwd: tempDir,
         });
-        
+
         // Create a tracking branch
         execSync(
           `git checkout -b ${escapeShellArg(branchName)} --track origin/${escapeShellArg(branchName)}`,
@@ -110,7 +110,7 @@ export function pushBranch(tempDir: string, branchName: string): boolean {
       logger.warn(
         `Push failed, remote branch exists and is different. Using force push to avoid conflicts.`
       );
-      
+
       // Instead of trying to merge (which can cause conflicts),
       // we'll use force push since this is a contribution workflow
       // where we want our local changes to take precedence
