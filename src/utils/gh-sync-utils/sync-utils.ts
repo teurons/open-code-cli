@@ -113,8 +113,9 @@ export async function executeSyncOperations(
         case FileAction.UPDATE_TRACKER:
           // Only update the tracker hash, no file changes needed
           syncResult.fileHash = actionResult.localFileHash;
-          syncResult.message = "Updated tracker hash only (local changes synced with source)";
-          
+          syncResult.message =
+            "Updated tracker hash only (local changes synced with source)";
+
           // Update file data for tracking
           updatedFiles[repo][relativeLocalPath] = {
             hash: syncResult.fileHash,
