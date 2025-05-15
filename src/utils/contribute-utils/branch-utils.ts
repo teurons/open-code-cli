@@ -8,7 +8,19 @@ import { escapeShellArg } from "../gh-sync-utils/file-utils";
  */
 export function createBranch(tempDir: string, branchName: string): boolean {
   try {
-    // Check if branch exists remotely
+    // Fetch the latest information from the remote
+    try {
+      logger.info("Fetching latest information from remote");
+      execSync("git fetch --prune", {
+        stdio: "inherit",
+        cwd: tempDir,
+      });
+    } catch (fetchError) {
+      logger.warn(`Failed to fetch from remote: ${(fetchError as Error).message}`);
+      // Continue anyway as we might still be able to create the branch
+    }
+    
+    // Check if branch exists remotely (after fetching the latest info)
     let remoteBranchExists = false;
     try {
       const branches = execSync("git branch -r", {
