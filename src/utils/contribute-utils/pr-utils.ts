@@ -56,10 +56,11 @@ export function createPullRequest(
 
     // Create PR using GitHub CLI
     // If forkRepo is the same as sourceRepo, we don't need to specify the owner in the head parameter
-    const headParam = forkRepo === sourceRepo
-      ? escapeShellArg(branchName)
-      : `${forkRepo.split('/')[0]}:${escapeShellArg(branchName)}`
-    
+    const headParam =
+      forkRepo === sourceRepo
+        ? escapeShellArg(branchName)
+        : `${forkRepo.split('/')[0]}:${escapeShellArg(branchName)}`
+
     const prCommand = `gh pr create --repo ${escapeShellArg(sourceRepo)} --head ${headParam} --title ${escapeShellArg(prTitle)} --body ${escapeShellArg(prBody)}`
 
     const prOutput = execSync(prCommand, {

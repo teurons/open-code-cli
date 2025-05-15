@@ -84,7 +84,7 @@ export async function handleContributeCommand(options: ContributeOptions): Promi
     // Process each repository
     for (const { repo, forkRepo, filePaths } of reposWithFork) {
       logger.info(`Contributing to repository ${repo} using fork ${forkRepo}`)
-      
+
       // Check if fork repo is the same as source repo
       const isSelfFork = forkRepo === repo
       if (isSelfFork) {
