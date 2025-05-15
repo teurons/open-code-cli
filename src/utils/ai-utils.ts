@@ -49,7 +49,7 @@ Return only the merged code without any explanations.`;
  */
 export function extractCodeFromResponse(response: string): string {
   if (!response) return "";
-  
+
   // Extract code from markdown code blocks if present
   const codeBlockRegex = /```(?:[\w]*)\n([\s\S]*?)```/g;
   let match;
