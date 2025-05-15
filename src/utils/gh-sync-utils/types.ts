@@ -7,6 +7,7 @@ export enum FileAction {
   COPY = "copy", // Copy from source to local (only source changed)
   NONE = "none", // No action needed (no changes or only local changes)
   MERGE = "merge", // Need to merge changes (both source and local changed)
+  UPDATE_TRACKER = "update_tracker", // Only update tracker hash, no file changes needed
 }
 
 /**
@@ -58,6 +59,7 @@ export interface SyncSummary {
   copyCount: number;
   noneCount: number;
   mergeCount: number;
+  updateTrackerCount: number;
   failedFiles: FileSyncResult[];
 }
 

@@ -110,6 +110,20 @@ export async function executeSyncOperations(
             "No action needed (unchanged or local changes only)";
           break;
 
+        case FileAction.UPDATE_TRACKER:
+          // Only update the tracker hash, no file changes needed
+          syncResult.fileHash = actionResult.localFileHash;
+          syncResult.message = "Updated tracker hash only (local changes synced with source)";
+          
+          // Update file data for tracking
+          updatedFiles[repo][relativeLocalPath] = {
+            hash: syncResult.fileHash,
+            syncedAt: syncResult.syncedAt,
+            action: FileAction.UPDATE_TRACKER,
+            relativeSourcePath: operation.relativeSourcePath,
+          };
+          break;
+
         case FileAction.MERGE:
           try {
             logger.info(`Attempting AI merge for ${localPath}`);
@@ -228,6 +242,7 @@ export function generateSyncSummary(results: FileSyncResult[]): SyncSummary {
     copyCount: 0,
     noneCount: 0,
     mergeCount: 0,
+    updateTrackerCount: 0,
     failedFiles: [],
   };
 
@@ -250,6 +265,9 @@ export function generateSyncSummary(results: FileSyncResult[]): SyncSummary {
       case FileAction.MERGE:
         summary.mergeCount++;
         break;
+      case FileAction.UPDATE_TRACKER:
+        summary.updateTrackerCount++;
+        break;
     }
   }
 
@@ -271,7 +289,7 @@ export function logSyncSummary(
 
   // Only log action breakdown, not the confusing summary line
   logger.info(
-    `${scope} action breakdown: ${summary.copyCount} copied, ${summary.noneCount} unchanged, ${summary.mergeCount} need merge`
+    `${scope} action breakdown: ${summary.copyCount} copied, ${summary.noneCount} unchanged, ${summary.mergeCount} need merge, ${summary.updateTrackerCount} tracker updates`
   );
 
   if (summary.failCount > 0) {

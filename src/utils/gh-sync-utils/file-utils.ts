@@ -148,8 +148,9 @@ export function actionOnFile(
   // If localFileHash !== trackerFileHash && localFileHash === sourceFileHash
   // It means file changes of local have been pushed to source
   if (localFileHash !== trackerFileHash && localFileHash === sourceFileHash) {
+    // In this case we only need to update the tracker hash, no need to copy the file
     return {
-      action: FileAction.COPY,
+      action: FileAction.UPDATE_TRACKER,
       sourceFileHash,
       localFileHash,
       trackerFileHash,
