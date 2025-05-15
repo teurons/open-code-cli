@@ -13,6 +13,7 @@ import {
   logSyncSummary,
   syncDirectoryChanges,
   handleDeletedFiles,
+  updateTrackerStructure,
 } from '.'
 
 /**
@@ -67,7 +68,11 @@ export async function processRepo(
   const shouldFetchResult = await checkIfShouldFetch(repo, branch, sync, force, trackerConfig)
 
   if (!shouldFetchResult.shouldFetch) {
-    logger.info(`Repository ${repo} is already up to date, skipping fetch`)
+    logger.info(`Repository ${repo} is already up to date, updating tracker structure`)
+    
+    // Always update the tracker file structure
+    updateTrackerStructure(repoGroup, trackerConfig, cwd)
+    
     return {
       repo,
       results: [],

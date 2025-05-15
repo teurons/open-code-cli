@@ -23,3 +23,6 @@ export { getLatestCommitHash, downloadRepository } from './repo-utils'
 
 // Export sync utilities
 export { executeSyncOperations, generateSyncSummary, logSyncSummary } from './sync-utils'
+
+// Export tracker utilities
+export { updateTrackerStructure } from './tracker-utils'

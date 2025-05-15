@@ -7,7 +7,7 @@
           "repo": "locospec/locospec-laravel",
           "sync": true,
           "branch": "main",
-          "forkRepo": "rjvim/locospec-laravel",
+          "forkRepo": "locospec/locospec-laravel",
           "files": [
             {
               "source": "/",
