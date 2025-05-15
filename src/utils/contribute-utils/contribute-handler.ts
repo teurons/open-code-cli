@@ -84,6 +84,12 @@ export async function handleContributeCommand(options: ContributeOptions): Promi
     // Process each repository
     for (const { repo, forkRepo, filePaths } of reposWithFork) {
       logger.info(`Contributing to repository ${repo} using fork ${forkRepo}`)
+      
+      // Check if fork repo is the same as source repo
+      const isSelfFork = forkRepo === repo
+      if (isSelfFork) {
+        logger.info(`Fork repository is the same as source repository (${repo})`)
+      }
 
       // Read current tracker config to check for existing PRs
       const trackerConfig = readTrackerConfig(cwd)
@@ -118,13 +124,15 @@ export async function handleContributeCommand(options: ContributeOptions): Promi
 
       try {
         // Sync fork with source if needed
-        if (updateExistingPR) {
+        if (updateExistingPR && forkRepo !== repo) {
           logger.info(`Syncing fork ${forkRepo} with source ${repo}`)
           const syncSuccess = syncForkWithSource(tempDir, repo)
           if (!syncSuccess) {
             logger.error(`Failed to sync fork with source for ${repo}`)
             continue
           }
+        } else if (updateExistingPR && forkRepo === repo) {
+          logger.info(`Fork repository is the same as source repository (${repo}), skipping sync`)
         }
 
         // Create or checkout branch

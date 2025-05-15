@@ -98,6 +98,7 @@ export async function processRepositoryAndCreatePR(
 
   // 7. Create PR if needed
   if (!updateExistingPR) {
+    
     const prResult = createPullRequest(
       tempDir,
       repo,
