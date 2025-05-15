@@ -1,6 +1,11 @@
-import { logger } from '../../logger'
-import { writeTrackerConfig, TrackerConfig, RepoSyncData, FileSyncData } from '../tracker'
-import { RepoGroup, FetchFile } from './gh-sync-repo'
+import { logger } from "../../logger";
+import {
+  writeTrackerConfig,
+  TrackerConfig,
+  RepoSyncData,
+  FileSyncData,
+} from "../tracker";
+import { RepoGroup, FetchFile } from "./gh-sync-repo";
 
 /**
  * Always updates the tracker file structure from the current workflow configuration
@@ -15,40 +20,40 @@ export function updateTrackerStructure(
   trackerConfig: TrackerConfig,
   cwd: string
 ): boolean {
-  const { repo, branch = 'main', forkRepo } = repoGroup
-  const trackerData = trackerConfig.repos[repo]
+  const { repo, branch = "main", forkRepo } = repoGroup;
+  const trackerData = trackerConfig.repos[repo];
 
   // If no tracker data exists, create a new entry
   if (!trackerData) {
-    logger.info(`Creating new tracker entry for repository ${repo}`)
+    logger.info(`Creating new tracker entry for repository ${repo}`);
 
     trackerConfig.repos[repo] = {
       branch,
-      lastCommitHash: '',
+      lastCommitHash: "",
       syncedAt: new Date().toISOString(),
       filePaths: repoGroup.files,
       files: {},
       ...(forkRepo ? { forkRepo } : {}),
-    }
+    };
   } else {
     // Always update the tracker structure while preserving existing data
-    logger.info(`Updating tracker structure for repository ${repo}`)
+    logger.info(`Updating tracker structure for repository ${repo}`);
 
     // Generate the new structure
-    const newStructure = generateRepoStructure(repoGroup, trackerData)
+    const newStructure = generateRepoStructure(repoGroup, trackerData);
 
     // Preserve existing data but use the new structure
     trackerConfig.repos[repo] = {
       ...newStructure,
-      lastCommitHash: trackerData.lastCommitHash || '',
+      lastCommitHash: trackerData.lastCommitHash || "",
       syncedAt: new Date().toISOString(),
       files: preserveFileData(trackerData.files || {}, newStructure.filePaths),
-    }
+    };
   }
 
   // Always write the updated tracker config
-  writeTrackerConfig(cwd, trackerConfig)
-  return true
+  writeTrackerConfig(cwd, trackerConfig);
+  return true;
 }
 
 /**
@@ -60,16 +65,18 @@ export function updateTrackerStructure(
 function generateRepoStructure(
   repoGroup: RepoGroup,
   trackerData?: RepoSyncData
-): Omit<RepoSyncData, 'lastCommitHash' | 'syncedAt' | 'files'> {
-  const { branch = 'main', forkRepo } = repoGroup
+): Omit<RepoSyncData, "lastCommitHash" | "syncedAt" | "files"> {
+  const { branch = "main", forkRepo } = repoGroup;
 
   return {
     branch,
     filePaths: repoGroup.files,
     ...(forkRepo ? { forkRepo } : {}),
     // Include pullRequest if it exists in the tracker data
-    ...(trackerData?.pullRequest ? { pullRequest: trackerData.pullRequest } : {}),
-  }
+    ...(trackerData?.pullRequest
+      ? { pullRequest: trackerData.pullRequest }
+      : {}),
+  };
 }
 
 /**
@@ -83,25 +90,25 @@ function preserveFileData(
   newFilePaths: FetchFile[]
 ): Record<string, FileSyncData> {
   // Start with existing files
-  const updatedFiles = { ...existingFiles }
+  const updatedFiles = { ...existingFiles };
 
   // Ensure all new file paths have entries, even if empty
   for (const filePath of newFilePaths) {
-    const localPath = filePath.local
+    const localPath = filePath.local;
 
     // If this file doesn't exist in the tracker yet, create an empty entry
     if (!updatedFiles[localPath]) {
       updatedFiles[localPath] = {
-        hash: '',
-        syncedAt: '',
+        hash: "",
+        syncedAt: "",
         relativeSourcePath: filePath.source,
-      }
+      };
     }
     // If it exists but doesn't have relativeSourcePath, add it
     else if (!updatedFiles[localPath].relativeSourcePath) {
-      updatedFiles[localPath].relativeSourcePath = filePath.source
+      updatedFiles[localPath].relativeSourcePath = filePath.source;
     }
   }
 
-  return updatedFiles
+  return updatedFiles;
 }

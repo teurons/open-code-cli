@@ -1,7 +1,7 @@
-import { createOpenRouter } from '@openrouter/ai-sdk-provider'
-import { generateText } from 'ai'
-import { logger } from '../logger'
-import { TaskConfig } from '../types/common'
+import { createOpenRouter } from "@openrouter/ai-sdk-provider";
+import { generateText } from "ai";
+import { logger } from "../logger";
+import { TaskConfig } from "../types/common";
 
 /**
  * Gets the system prompt for AI code merging
@@ -20,7 +20,7 @@ Follow these rules:
 5. Ensure the merged code is functional and maintains the original intent of both files
 6. Return ONLY the merged code without any explanations or markdown formatting
 
-Your output should be a complete, functional file that combines the functionality of both input files.`
+Your output should be a complete, functional file that combines the functionality of both input files.`;
 }
 
 /**
@@ -40,7 +40,7 @@ ${source}
 \`\`\`
 
 Please analyze both files and create a merged version that intelligently combines their functionality.
-Return only the merged code without any explanations.`
+Return only the merged code without any explanations.`;
 }
 
 /**
@@ -48,20 +48,20 @@ Return only the merged code without any explanations.`
  */
 export function extractCodeFromResponse(response: string): string | null {
   // Extract code from markdown code blocks if present
-  const codeBlockRegex = /```(?:[\w]*)\n([\s\S]*?)```/g
-  let match
-  const matches = []
+  const codeBlockRegex = /```(?:[\w]*)\n([\s\S]*?)```/g;
+  let match;
+  const matches = [];
 
   while ((match = codeBlockRegex.exec(response)) !== null) {
-    matches.push(match[1])
+    matches.push(match[1]);
   }
 
   if (matches.length > 0) {
     // Join all code blocks if multiple are found
-    return matches.join('\n\n')
+    return matches.join("\n\n");
   }
 
-  return null
+  return null;
 }
 
 /**
@@ -69,11 +69,11 @@ export function extractCodeFromResponse(response: string): string | null {
  */
 export function validateAiMergeConfig(config: TaskConfig): boolean {
   return (
-    typeof config === 'object' &&
-    typeof config.targetFile === 'string' &&
-    typeof config.sourceFile === 'string' &&
-    typeof config.outputFile === 'string'
-  )
+    typeof config === "object" &&
+    typeof config.targetFile === "string" &&
+    typeof config.sourceFile === "string" &&
+    typeof config.outputFile === "string"
+  );
 }
 
 /**
@@ -86,49 +86,49 @@ export async function aiMerge(
   apiKey?: string
 ): Promise<string | null> {
   if (!target || !source) {
-    logger.error('Both target and source content are required')
-    return null
+    logger.error("Both target and source content are required");
+    return null;
   }
 
   try {
     if (!apiKey) {
       throw new Error(
-        'OpenRouter API key is required. Set it in the task config, context, or as OPENROUTER_API_KEY environment variable.'
-      )
+        "OpenRouter API key is required. Set it in the task config, context, or as OPENROUTER_API_KEY environment variable."
+      );
     }
 
     const openrouter = createOpenRouter({
       apiKey,
-    })
+    });
 
-    const systemPrompt = getAiMergeSystemPrompt()
-    const userPrompt = getAiMergeUserPrompt(target, source)
+    const systemPrompt = getAiMergeSystemPrompt();
+    const userPrompt = getAiMergeUserPrompt(target, source);
 
-    logger.info(`Sending merge request to AI model: ${model}`)
+    logger.info(`Sending merge request to AI model: ${model}`);
 
     const { text } = await generateText({
       model: openrouter.chat(model),
       messages: [
         {
-          role: 'system',
+          role: "system",
           content: systemPrompt,
         },
         {
-          role: 'user',
+          role: "user",
           content: userPrompt,
         },
       ],
-    })
+    });
 
-    const response = text || ''
-    logger.info('Received response from AI')
+    const response = text || "";
+    logger.info("Received response from AI");
 
     // Extract code from response if it contains markdown code blocks
-    const extractedCode = extractCodeFromResponse(response)
+    const extractedCode = extractCodeFromResponse(response);
 
-    return extractedCode || response
+    return extractedCode || response;
   } catch (error) {
-    logger.error(`AI merge failed: ${(error as Error).message}`)
-    return null
+    logger.error(`AI merge failed: ${(error as Error).message}`);
+    return null;
   }
 }

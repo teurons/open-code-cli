@@ -1,38 +1,43 @@
-import { execSync } from 'child_process'
-import { logger } from '../../logger'
-import { escapeShellArg } from '../gh-sync-utils/file-utils'
+import { execSync } from "child_process";
+import { logger } from "../../logger";
+import { escapeShellArg } from "../gh-sync-utils/file-utils";
 
 /**
  * Creates a new branch in the forked repository
  */
 export function createBranch(tempDir: string, branchName: string): boolean {
   try {
-    logger.info(`Creating branch ${branchName} in forked repository`)
+    logger.info(`Creating branch ${branchName} in forked repository`);
     execSync(`git checkout -b ${escapeShellArg(branchName)}`, {
-      stdio: 'inherit',
+      stdio: "inherit",
       cwd: tempDir,
-    })
-    return true
+    });
+    return true;
   } catch (e) {
-    logger.error(`Failed to create branch: ${(e as Error).message}`)
-    return false
+    logger.error(`Failed to create branch: ${(e as Error).message}`);
+    return false;
   }
 }
 
 /**
  * Checks out an existing branch in the forked repository
  */
-export function checkoutExistingBranch(tempDir: string, branchName: string): boolean {
+export function checkoutExistingBranch(
+  tempDir: string,
+  branchName: string
+): boolean {
   try {
-    logger.info(`Checking out existing branch ${branchName} in forked repository`)
+    logger.info(
+      `Checking out existing branch ${branchName} in forked repository`
+    );
     execSync(`git checkout ${escapeShellArg(branchName)}`, {
-      stdio: 'inherit',
+      stdio: "inherit",
       cwd: tempDir,
-    })
-    return true
+    });
+    return true;
   } catch (e) {
-    logger.error(`Failed to checkout branch: ${(e as Error).message}`)
-    return false
+    logger.error(`Failed to checkout branch: ${(e as Error).message}`);
+    return false;
   }
 }
 
@@ -41,15 +46,15 @@ export function checkoutExistingBranch(tempDir: string, branchName: string): boo
  */
 export function pushBranch(tempDir: string, branchName: string): boolean {
   try {
-    logger.info(`Pushing branch ${branchName} to forked repository`)
+    logger.info(`Pushing branch ${branchName} to forked repository`);
     execSync(`git push -u origin ${escapeShellArg(branchName)}`, {
-      stdio: 'inherit',
+      stdio: "inherit",
       cwd: tempDir,
-    })
-    return true
+    });
+    return true;
   } catch (e) {
-    logger.error(`Failed to push branch: ${(e as Error).message}`)
-    return false
+    logger.error(`Failed to push branch: ${(e as Error).message}`);
+    return false;
   }
 }
 
@@ -59,15 +64,15 @@ export function pushBranch(tempDir: string, branchName: string): boolean {
  */
 export function forcePushBranch(tempDir: string, branchName: string): boolean {
   try {
-    logger.info(`Force pushing branch ${branchName} to forked repository`)
+    logger.info(`Force pushing branch ${branchName} to forked repository`);
     execSync(`git push -f -u origin ${escapeShellArg(branchName)}`, {
-      stdio: 'inherit',
+      stdio: "inherit",
       cwd: tempDir,
-    })
-    return true
+    });
+    return true;
   } catch (e) {
-    logger.error(`Failed to force push branch: ${(e as Error).message}`)
-    return false
+    logger.error(`Failed to force push branch: ${(e as Error).message}`);
+    return false;
   }
 }
 
@@ -78,24 +83,24 @@ export function forcePushBranch(tempDir: string, branchName: string): boolean {
  */
 export function mergeMainIntoCurrentBranch(tempDir: string): boolean {
   try {
-    logger.info('Merging main branch into current branch')
+    logger.info("Merging main branch into current branch");
 
     // Fetch the latest changes
-    execSync('git fetch origin', {
-      stdio: 'inherit',
+    execSync("git fetch origin", {
+      stdio: "inherit",
       cwd: tempDir,
-    })
+    });
 
     // Merge origin/main into the current branch
-    execSync('git merge origin/main', {
-      stdio: 'inherit',
+    execSync("git merge origin/main", {
+      stdio: "inherit",
       cwd: tempDir,
-    })
+    });
 
-    logger.info('Successfully merged main branch into current branch')
-    return true
+    logger.info("Successfully merged main branch into current branch");
+    return true;
   } catch (e) {
-    logger.error(`Failed to merge main branch: ${(e as Error).message}`)
-    return false
+    logger.error(`Failed to merge main branch: ${(e as Error).message}`);
+    return false;
   }
 }

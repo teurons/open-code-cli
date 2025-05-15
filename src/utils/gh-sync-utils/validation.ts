@@ -1,5 +1,5 @@
-import { context } from '../../context'
-import { TaskConfig as CommonTaskConfig } from '../../types/common'
+import { context } from "../../context";
+import { TaskConfig as CommonTaskConfig } from "../../types/common";
 
 /**
  * Validates dependencies in the task configuration
@@ -9,7 +9,7 @@ export function validateDependencies(depends: unknown): void {
   if (depends && Array.isArray(depends)) {
     for (const dep of depends) {
       if (!context.has(dep)) {
-        throw new Error(`Missing dependency: ${dep}`)
+        throw new Error(`Missing dependency: ${dep}`);
       }
     }
   }
@@ -22,8 +22,8 @@ export function validateDependencies(depends: unknown): void {
 export function validateReposConfiguration(repos: unknown[]): void {
   if (!repos || !Array.isArray(repos) || repos.length === 0) {
     throw new Error(
-      'No repositories provided. The repos field must be an array of repository groups.'
-    )
+      "No repositories provided. The repos field must be an array of repository groups."
+    );
   }
 }
 
@@ -34,7 +34,9 @@ export function validateReposConfiguration(repos: unknown[]): void {
  */
 export function validateRepositoryGroup(repo: unknown, files: unknown): void {
   if (!repo || !files || !Array.isArray(files)) {
-    throw new Error('Invalid repository group: repo and files array are required')
+    throw new Error(
+      "Invalid repository group: repo and files array are required"
+    );
   }
 }
 
@@ -48,32 +50,38 @@ export function validateGhSyncConfig(config: CommonTaskConfig): boolean {
   return (
     Array.isArray(config.repos) &&
     config.repos.every((repoGroup: unknown) => {
-      if (typeof repoGroup !== 'object' || repoGroup === null) return false
+      if (typeof repoGroup !== "object" || repoGroup === null) return false;
 
-      const typedRepo = repoGroup as Record<string, unknown>
+      const typedRepo = repoGroup as Record<string, unknown>;
 
       // Required fields
-      if (typeof typedRepo.repo !== 'string' || !Array.isArray(typedRepo.files)) {
-        return false
+      if (
+        typeof typedRepo.repo !== "string" ||
+        !Array.isArray(typedRepo.files)
+      ) {
+        return false;
       }
 
       // Optional fields
-      if (typedRepo.sync !== undefined && typeof typedRepo.sync !== 'boolean') {
-        return false
+      if (typedRepo.sync !== undefined && typeof typedRepo.sync !== "boolean") {
+        return false;
       }
 
-      if (typedRepo.branch !== undefined && typeof typedRepo.branch !== 'string') {
-        return false
+      if (
+        typedRepo.branch !== undefined &&
+        typeof typedRepo.branch !== "string"
+      ) {
+        return false;
       }
 
       // Validate files
       return typedRepo.files.every(
         (file: unknown) =>
-          typeof file === 'object' &&
+          typeof file === "object" &&
           file !== null &&
-          typeof (file as Record<string, unknown>).source === 'string' &&
-          typeof (file as Record<string, unknown>).local === 'string'
-      )
+          typeof (file as Record<string, unknown>).source === "string" &&
+          typeof (file as Record<string, unknown>).local === "string"
+      );
     })
-  )
+  );
 }

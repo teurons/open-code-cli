@@ -6,21 +6,21 @@
 /**
  * Type for the operation type (copy or delete)
  */
-export type ContributeOperationType = 'copy' | 'delete'
+export type ContributeOperationType = "copy" | "delete";
 
 export interface ContributeSyncOperation {
   /** Absolute path to the local file */
-  absoluteLocalPath: string
+  absoluteLocalPath: string;
   /** Absolute path to the source file in the temporary directory */
-  absoluteSourcePath: string
+  absoluteSourcePath: string;
   /** Relative path to the local file from the project root */
-  relativeLocalPath: string
+  relativeLocalPath: string;
   /** Relative path to the source file from the repository root */
-  relativeSourcePath: string
+  relativeSourcePath: string;
   /** Repository name */
-  repo: string
+  repo: string;
   /** Type of operation to perform */
-  operationType: ContributeOperationType
+  operationType: ContributeOperationType;
 }
 
 /**
@@ -28,13 +28,13 @@ export interface ContributeSyncOperation {
  */
 export interface ContributeSyncResult {
   /** The sync operation that was performed */
-  operation: ContributeSyncOperation
+  operation: ContributeSyncOperation;
   /** Whether the operation was successful */
-  success: boolean
+  success: boolean;
   /** Error message if the operation failed */
-  error?: string
+  error?: string;
   /** The action that was performed */
-  action: ContributeOperationType | 'skip'
+  action: ContributeOperationType | "skip";
 }
 
 /**
@@ -42,15 +42,15 @@ export interface ContributeSyncResult {
  */
 export interface ContributeSyncSummary {
   /** Number of files copied */
-  copyCount: number
+  copyCount: number;
   /** Number of files deleted */
-  deleteCount: number
+  deleteCount: number;
   /** Number of files skipped */
-  skipCount: number
+  skipCount: number;
   /** Number of operations that failed */
-  failCount: number
+  failCount: number;
   /** Total number of operations */
-  totalCount: number
+  totalCount: number;
 }
 
 /**
@@ -58,15 +58,15 @@ export interface ContributeSyncSummary {
  */
 export interface ContributeConfig {
   /** Whether to perform a dry run (don't actually copy files) */
-  dryRun: boolean
+  dryRun: boolean;
   /** The branch name to create */
-  branchName: string
+  branchName: string;
   /** The commit message */
-  commitMessage: string
+  commitMessage: string;
   /** The PR title */
-  prTitle: string
+  prTitle: string;
   /** The PR body */
-  prBody: string
+  prBody: string;
 }
 
 /**
@@ -74,17 +74,17 @@ export interface ContributeConfig {
  */
 export interface ContributeResult {
   /** The repository that was contributed to */
-  repo: string
+  repo: string;
   /** The fork repository that was used */
-  forkRepo: string
+  forkRepo: string;
   /** The branch name that was created */
-  branchName: string
+  branchName: string;
   /** The PR number if created */
-  prNumber?: number
+  prNumber?: number;
   /** The PR URL if created */
-  prUrl?: string
+  prUrl?: string;
   /** The sync results */
-  syncResults: ContributeSyncResult[]
+  syncResults: ContributeSyncResult[];
   /** Whether the operation was successful */
-  success: boolean
+  success: boolean;
 }
