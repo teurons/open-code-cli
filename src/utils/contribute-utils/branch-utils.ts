@@ -16,10 +16,12 @@ export function createBranch(tempDir: string, branchName: string): boolean {
         cwd: tempDir,
       });
     } catch (fetchError) {
-      logger.warn(`Failed to fetch from remote: ${(fetchError as Error).message}`);
+      logger.warn(
+        `Failed to fetch from remote: ${(fetchError as Error).message}`
+      );
       // Continue anyway as we might still be able to create the branch
     }
-    
+
     // Check if branch exists remotely (after fetching the latest info)
     let remoteBranchExists = false;
     try {
