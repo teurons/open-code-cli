@@ -43,15 +43,51 @@ export function checkoutExistingBranch(
 
 /**
  * Pushes changes to the forked repository
+ * Handles the case where the remote branch is ahead of the local branch
  */
 export function pushBranch(tempDir: string, branchName: string): boolean {
   try {
     logger.info(`Pushing branch ${branchName} to forked repository`);
-    execSync(`git push -u origin ${escapeShellArg(branchName)}`, {
-      stdio: "inherit",
-      cwd: tempDir,
-    });
-    return true;
+    try {
+      // First try a normal push
+      execSync(`git push -u origin ${escapeShellArg(branchName)}`, {
+        stdio: "inherit",
+        cwd: tempDir,
+      });
+      return true;
+    } catch (pushError) {
+      // If push fails, it might be because the remote branch is ahead
+      logger.warn(`Push failed, attempting to resolve by fetching remote changes`);
+      
+      // Try to fetch the remote branch
+      try {
+        // Fetch the remote branch
+        execSync(`git fetch origin ${escapeShellArg(branchName)}`, {
+          stdio: "inherit",
+          cwd: tempDir,
+        });
+        
+        // Try to merge the remote branch
+        logger.info(`Merging remote changes from origin/${branchName}`);
+        execSync(`git merge origin/${escapeShellArg(branchName)}`, {
+          stdio: "inherit",
+          cwd: tempDir,
+        });
+        
+        // Try pushing again
+        logger.info(`Pushing merged changes to branch ${branchName}`);
+        execSync(`git push -u origin ${escapeShellArg(branchName)}`, {
+          stdio: "inherit",
+          cwd: tempDir,
+        });
+        
+        return true;
+      } catch (mergeError) {
+        // If merge fails, fall back to force push
+        logger.warn(`Merge failed, falling back to force push`);
+        return forcePushBranch(tempDir, branchName);
+      }
+    }
   } catch (e) {
     logger.error(`Failed to push branch: ${(e as Error).message}`);
     return false;
