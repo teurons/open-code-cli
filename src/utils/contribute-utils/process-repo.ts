@@ -109,54 +109,45 @@ export async function processRepositoryAndCreatePR(
     return;
   }
 
-  // 7. Create PR if needed
-  if (!updateExistingPR) {
-    const prResult = createPullRequest(
-      tempDir,
-      repo,
-      forkRepo,
-      branchName,
-      prTitle,
-      updatedPrBody,
-      dryRun
-    );
+  // 7. Create or update PR
+  const prResult = createPullRequest(
+    tempDir,
+    repo,
+    forkRepo,
+    branchName,
+    prTitle,
+    updatedPrBody,
+    dryRun
+  );
 
-    if (prResult.success && prResult.prUrl) {
-      logger.info(`Successfully created PR for ${repo}: ${prResult.prUrl}`);
-
-      // Update tracker with PR info
-      if (!trackerConfig.repos[repo]) {
-        trackerConfig.repos[repo] = {
-          branch: "main", // Default branch
-          lastCommitHash: "",
-          syncedAt: new Date().toISOString(),
-          forkRepo,
-          filePaths,
-          files: {},
-        };
-      }
-
-      trackerConfig.repos[repo].pullRequest = {
-        prNumber: prResult.prNumber!,
-        branchName,
-        status: "open",
-        lastUpdated: new Date().toISOString(),
-      };
-
-      writeTrackerConfig(cwd, trackerConfig);
+  if (prResult.success && prResult.prUrl) {
+    if (prResult.alreadyExists) {
+      logger.info(`PR already exists for ${repo}: ${prResult.prUrl}`);
     } else {
-      logger.error(`Failed to create PR for ${repo}`);
+      logger.info(`Successfully created PR for ${repo}: ${prResult.prUrl}`);
     }
-  } else {
-    // We know repoData and pullRequest exist here because updateExistingPR is true
-    const prNumber = trackerConfig.repos[repo]?.pullRequest?.prNumber || 0;
-    logger.info(`Successfully updated PR #${prNumber} for ${repo}`);
 
-    // Update last updated timestamp
-    if (trackerConfig.repos[repo] && trackerConfig.repos[repo].pullRequest) {
-      trackerConfig.repos[repo].pullRequest!.lastUpdated =
-        new Date().toISOString();
-      writeTrackerConfig(cwd, trackerConfig);
+    // Update tracker with PR info
+    if (!trackerConfig.repos[repo]) {
+      trackerConfig.repos[repo] = {
+        branch: "main", // Default branch
+        lastCommitHash: "",
+        syncedAt: new Date().toISOString(),
+        forkRepo,
+        filePaths,
+        files: {},
+      };
     }
+
+    trackerConfig.repos[repo].pullRequest = {
+      prNumber: prResult.prNumber!,
+      branchName,
+      status: "open",
+      lastUpdated: new Date().toISOString(),
+    };
+
+    writeTrackerConfig(cwd, trackerConfig);
+  } else {
+    logger.error(`Failed to create PR for ${repo}`);
   }
 }

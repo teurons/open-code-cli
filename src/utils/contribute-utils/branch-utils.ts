@@ -4,9 +4,27 @@ import { escapeShellArg } from "../gh-sync-utils/file-utils";
 
 /**
  * Creates a new branch in the forked repository
+ * Handles the case where the branch might already exist remotely
  */
 export function createBranch(tempDir: string, branchName: string): boolean {
   try {
+    // Check if branch exists remotely
+    let remoteBranchExists = false;
+    try {
+      const branches = execSync("git branch -r", {
+        cwd: tempDir,
+        encoding: "utf8",
+      }).toString();
+      remoteBranchExists = branches.includes(`origin/${branchName}`);
+    } catch (e) {
+      // Ignore error checking remote branches
+    }
+
+    if (remoteBranchExists) {
+      logger.info(`Branch ${branchName} exists remotely, checking it out`);
+      return checkoutExistingBranch(tempDir, branchName);
+    }
+
     logger.info(`Creating branch ${branchName} in forked repository`);
     execSync(`git checkout -b ${escapeShellArg(branchName)}`, {
       stdio: "inherit",
@@ -21,6 +39,7 @@ export function createBranch(tempDir: string, branchName: string): boolean {
 
 /**
  * Checks out an existing branch in the forked repository
+ * Handles the case where the branch exists remotely but not locally
  */
 export function checkoutExistingBranch(
   tempDir: string,
@@ -30,11 +49,42 @@ export function checkoutExistingBranch(
     logger.info(
       `Checking out existing branch ${branchName} in forked repository`
     );
-    execSync(`git checkout ${escapeShellArg(branchName)}`, {
-      stdio: "inherit",
-      cwd: tempDir,
-    });
-    return true;
+    
+    try {
+      // Try to checkout local branch first
+      execSync(`git checkout ${escapeShellArg(branchName)}`, {
+        stdio: "inherit",
+        cwd: tempDir,
+      });
+      return true;
+    } catch (localCheckoutError) {
+      // If local checkout fails, try to checkout from remote
+      logger.info(`Local branch not found, trying to checkout from remote`);
+      
+      try {
+        // Fetch the branch from remote
+        execSync(`git fetch origin ${escapeShellArg(branchName)}`, {
+          stdio: "inherit",
+          cwd: tempDir,
+        });
+        
+        // Create a tracking branch
+        execSync(
+          `git checkout -b ${escapeShellArg(branchName)} --track origin/${escapeShellArg(branchName)}`,
+          {
+            stdio: "inherit",
+            cwd: tempDir,
+          }
+        );
+        return true;
+      } catch (remoteCheckoutError) {
+        // If remote checkout also fails, the branch might not exist
+        logger.error(
+          `Failed to checkout branch from remote: ${(remoteCheckoutError as Error).message}`
+        );
+        return false;
+      }
+    }
   } catch (e) {
     logger.error(`Failed to checkout branch: ${(e as Error).message}`);
     return false;
@@ -58,37 +108,13 @@ export function pushBranch(tempDir: string, branchName: string): boolean {
     } catch (pushError) {
       // If push fails, it might be because the remote branch is ahead
       logger.warn(
-        `Push failed, attempting to resolve by fetching remote changes`
+        `Push failed, remote branch exists and is different. Using force push to avoid conflicts.`
       );
-
-      // Try to fetch the remote branch
-      try {
-        // Fetch the remote branch
-        execSync(`git fetch origin ${escapeShellArg(branchName)}`, {
-          stdio: "inherit",
-          cwd: tempDir,
-        });
-
-        // Try to merge the remote branch
-        logger.info(`Merging remote changes from origin/${branchName}`);
-        execSync(`git merge origin/${escapeShellArg(branchName)}`, {
-          stdio: "inherit",
-          cwd: tempDir,
-        });
-
-        // Try pushing again
-        logger.info(`Pushing merged changes to branch ${branchName}`);
-        execSync(`git push -u origin ${escapeShellArg(branchName)}`, {
-          stdio: "inherit",
-          cwd: tempDir,
-        });
-
-        return true;
-      } catch (mergeError) {
-        // If merge fails, fall back to force push
-        logger.warn(`Merge failed, falling back to force push`);
-        return forcePushBranch(tempDir, branchName);
-      }
+      
+      // Instead of trying to merge (which can cause conflicts),
+      // we'll use force push since this is a contribution workflow
+      // where we want our local changes to take precedence
+      return forcePushBranch(tempDir, branchName);
     }
   } catch (e) {
     logger.error(`Failed to push branch: ${(e as Error).message}`);
