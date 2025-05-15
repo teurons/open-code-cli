@@ -45,8 +45,11 @@ Return only the merged code without any explanations.`;
 
 /**
  * Extracts code from a response that may contain markdown code blocks
+ * If no code blocks are found, returns the original response with any standalone backticks removed
  */
-export function extractCodeFromResponse(response: string): string | null {
+export function extractCodeFromResponse(response: string): string {
+  if (!response) return "";
+  
   // Extract code from markdown code blocks if present
   const codeBlockRegex = /```(?:[\w]*)\n([\s\S]*?)```/g;
   let match;
@@ -61,7 +64,8 @@ export function extractCodeFromResponse(response: string): string | null {
     return matches.join("\n\n");
   }
 
-  return null;
+  // If no code blocks found, return the original response with any standalone backticks removed
+  return response.replace(/```/g, "");
 }
 
 /**
@@ -123,10 +127,10 @@ export async function aiMerge(
     const response = text || "";
     logger.info("Received response from AI");
 
-    // Extract code from response if it contains markdown code blocks
+    // Extract code from response, handling markdown code blocks if present
     const extractedCode = extractCodeFromResponse(response);
 
-    return extractedCode || response;
+    return extractedCode;
   } catch (error) {
     logger.error(`AI merge failed: ${(error as Error).message}`);
     return null;
