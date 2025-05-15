@@ -69,10 +69,10 @@ export async function processRepo(
 
   if (!shouldFetchResult.shouldFetch) {
     logger.info(`Repository ${repo} is already up to date, updating tracker structure`)
-    
+
     // Always update the tracker file structure
     updateTrackerStructure(repoGroup, trackerConfig, cwd)
-    
+
     return {
       repo,
       results: [],
