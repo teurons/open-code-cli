@@ -57,8 +57,10 @@ export function pushBranch(tempDir: string, branchName: string): boolean {
       return true;
     } catch (pushError) {
       // If push fails, it might be because the remote branch is ahead
-      logger.warn(`Push failed, attempting to resolve by fetching remote changes`);
-      
+      logger.warn(
+        `Push failed, attempting to resolve by fetching remote changes`
+      );
+
       // Try to fetch the remote branch
       try {
         // Fetch the remote branch
@@ -66,21 +68,21 @@ export function pushBranch(tempDir: string, branchName: string): boolean {
           stdio: "inherit",
           cwd: tempDir,
         });
-        
+
         // Try to merge the remote branch
         logger.info(`Merging remote changes from origin/${branchName}`);
         execSync(`git merge origin/${escapeShellArg(branchName)}`, {
           stdio: "inherit",
           cwd: tempDir,
         });
-        
+
         // Try pushing again
         logger.info(`Pushing merged changes to branch ${branchName}`);
         execSync(`git push -u origin ${escapeShellArg(branchName)}`, {
           stdio: "inherit",
           cwd: tempDir,
         });
-        
+
         return true;
       } catch (mergeError) {
         // If merge fails, fall back to force push
