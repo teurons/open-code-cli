@@ -141,3 +141,11 @@ TODO
 # eslintignore specific
 .yarn
 _archived
+.eslintrc.cjs
+bin/
+.github/
+jest.config.js
+commitlint.config.js
+eslint.config.mjs
+README.md
+tsup.config.ts
