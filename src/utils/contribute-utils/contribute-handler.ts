@@ -32,7 +32,7 @@ export async function handleContributeCommand(
     if (!isInstalled) {
       logger.error(
         red(
-          "GitHub CLI (gh) is not installed. Please install it to use the contribute command."
+          "GitHub CLI (gh) is not installed. Please install it to use the gh-contribute command."
         )
       );
       logger.info(
@@ -44,7 +44,7 @@ export async function handleContributeCommand(
     if (!isAuthenticated) {
       logger.error(
         red(
-          "GitHub CLI (gh) is not authenticated. Please authenticate it to use the contribute command."
+          "GitHub CLI (gh) is not authenticated. Please authenticate it to use the gh-contribute command."
         )
       );
       logger.info("You can authenticate by running: gh auth login");

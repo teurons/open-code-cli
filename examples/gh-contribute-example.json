@@ -1,7 +1,7 @@
 {
   "workflow": [
     {
-      "task": "contribute",
+      "task": "gh-contribute",
       "branchName": "feature/my-contribution",
       "commitMessage": "feat: add new feature",
       "prTitle": "Feature: Add new functionality",
