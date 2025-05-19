@@ -1,0 +1,20 @@
+{
+  "workflow": [
+    {
+      "task": "prompt",
+      "name": "parent_var",
+      "message": "Enter a value for parent variable",
+      "type": "input",
+      "default": "parent_value"
+    },
+    {
+      "task": "workflow",
+      "file": "./test-sub-workflow.json",
+      "keep": true
+    },
+    {
+      "task": "execute",
+      "command": "echo 'Back in parent workflow. Child var value: {{child_var}}'"
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "workflow": [
+    {
+      "task": "execute",
+      "command": "echo 'In sub-workflow. Parent var value: {{parent_var}}'"
+    },
+    {
+      "task": "prompt",
+      "name": "child_var",
+      "message": "Enter a value for child variable",
+      "type": "input",
+      "default": "child_value"
+    }
+  ]
+}
