@@ -8,6 +8,7 @@ interface ContributeArgv {
 export const command = "gh-contribute";
 export const describe =
   "Contribute changes from local to GitHub source repositories";
+
 export const aliases = ["ghc"];
 
 export function builder(yargs: Argv<ContributeArgv>): Argv {
