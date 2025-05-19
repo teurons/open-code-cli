@@ -19,7 +19,7 @@
       "depends": ["app_name"]
     },
     {
-      "task": "npm_cmd",
+      "task": "npm_execute",
       "commands": ["shadcn@latest init", "shadcn@latest add button"],
       "package_manager": "auto"
     },
