@@ -1,3 +1,20 @@
+# Run formatter and linter
 pnpm format:fix
 pnpm lint:fix
+
+# Stage any changes made by the formatter/linter
+files=$(git diff --name-only)
+if [ -n "$files" ]; then
+  echo "Staging formatting changes..."
+  echo "$files" | xargs git add
+fi
+
+# Build the project
 pnpm build
+
+# Stage any build output changes
+files=$(git diff --name-only)
+if [ -n "$files" ]; then
+  echo "Staging build output changes..."
+  echo "$files" | xargs git add
+fi
