@@ -147,8 +147,15 @@ class WorkflowTask implements Task {
     let isTempFile = false;
 
     // If the path is relative and we have a parent workflow path, resolve it relative to the parent
-    if (!isAbsolute(localWorkflowFile) && !isUrl(localWorkflowFile) && this.parentWorkflowPath) {
-      localWorkflowFile = join(dirname(this.parentWorkflowPath), localWorkflowFile);
+    if (
+      !isAbsolute(localWorkflowFile) &&
+      !isUrl(localWorkflowFile) &&
+      this.parentWorkflowPath
+    ) {
+      localWorkflowFile = join(
+        dirname(this.parentWorkflowPath),
+        localWorkflowFile
+      );
     }
 
     try {
