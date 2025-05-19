@@ -1,10 +1,11 @@
 // Core Node.js and external dependencies
 import { ArgumentsCamelCase, Argv } from "yargs";
 import { existsSync, readFileSync, unlinkSync } from "fs";
-import { join, isAbsolute, basename } from "path";
+import { join, isAbsolute, basename, dirname } from "path";
 import * as process from "node:process";
 import { get } from "https";
-import { createWriteStream } from "fs";
+import { createWriteStream, mkdtempSync } from "fs";
+import { tmpdir } from "os";
 import { URL } from "url";
 
 // Internal dependencies
@@ -78,7 +79,8 @@ const fetchWorkflow = async (source: string): Promise<string> => {
     return source;
   }
 
-  const tempFile = join(process.cwd(), `.temp-workflow-${Date.now()}.json`);
+  const tempDir = mkdtempSync(join(tmpdir(), "opencode-workflow-"));
+  const tempFile = join(tempDir, `workflow-${Date.now()}.json`);
 
   try {
     logger.info(`Downloading workflow from ${source}`);
@@ -133,7 +135,8 @@ class WorkflowTask implements Task {
    */
   constructor(
     private workflowFile: string, // Path or URL to the workflow file
-    private keepTemp: boolean = false // Whether to keep temporary files
+    private keepTemp: boolean = false, // Whether to keep temporary files
+    private parentWorkflowPath?: string // Path to the parent workflow file (for relative resolution)
   ) {}
 
   /**
@@ -142,6 +145,11 @@ class WorkflowTask implements Task {
   async execute(context: TaskContext): Promise<void> {
     let localWorkflowFile = this.workflowFile;
     let isTempFile = false;
+
+    // If the path is relative and we have a parent workflow path, resolve it relative to the parent
+    if (!isAbsolute(localWorkflowFile) && !isUrl(localWorkflowFile) && this.parentWorkflowPath) {
+      localWorkflowFile = join(dirname(this.parentWorkflowPath), localWorkflowFile);
+    }
 
     try {
       // Step 5.2.1: Handle remote workflow files
@@ -173,7 +181,8 @@ class WorkflowTask implements Task {
           const { file, keep = false } = taskContext.config;
           const workflowTask = new WorkflowTask(
             file as string,
-            keep as boolean
+            keep as boolean,
+            localWorkflowFile // Pass the current workflow file as parent
           );
           // Pass down the parent context to preserve the task registry and state
           return workflowTask.execute(taskContext);
@@ -207,7 +216,7 @@ class WorkflowTask implements Task {
           unlinkSync(localWorkflowFile);
         } catch (e) {
           logger.warn(
-            `Failed to clean up temporary file: ${localWorkflowFile}`
+            `Failed to clean up temporary file ${localWorkflowFile}: ${(e as Error).message}`
           );
         }
       }
