@@ -36,7 +36,10 @@ export function downloadRepository(
   // Download the entire repository once
   logger.info(`Downloading repository ${repo} to temporary directory`);
   const cloneCommand = `git clone --depth 1 --branch ${escapeShellArg(branch)} https://github.com/${escapeShellArg(repo)}.git ${escapeShellArg(tempDir)}`;
-  execSync(cloneCommand, { stdio: "inherit", cwd: process.cwd() });
+  execSync(cloneCommand, {
+    stdio: ["ignore", "ignore", "ignore"],
+    cwd: process.cwd(),
+  });
 
   // Remove .git directory immediately after cloning
   const gitDir = join(tempDir, ".git");
