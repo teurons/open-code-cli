@@ -8,8 +8,6 @@ import {
   validateRepositoryGroup,
   validateGhSyncConfig,
   FileSyncResult,
-  generateSyncSummary,
-  logSyncSummary,
 } from "../utils/gh-sync-utils";
 import { RepoGroup, processRepo } from "../utils/gh-sync-utils/gh-sync-repo";
 
@@ -67,8 +65,8 @@ export class GhSyncTask implements Task {
     // Only log overall summary if there are actual file operations
     if (allResults.length > 0) {
       // Generate and log overall summary
-      const overallSummary = generateSyncSummary(allResults);
-      logSyncSummary(overallSummary, false);
+      // const overallSummary = generateSyncSummary(allResults);
+      // logSyncSummary(overallSummary, false);
     }
   }
 

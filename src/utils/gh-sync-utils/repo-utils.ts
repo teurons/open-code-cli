@@ -34,12 +34,13 @@ export function downloadRepository(
   mkdirSync(tempDir, { recursive: true });
 
   // Download the entire repository once
-  logger.info(`Downloading repository ${repo} to temporary directory`);
+  logger.start(`Downloading repository ${repo}`);
   const cloneCommand = `git clone --depth 1 --branch ${escapeShellArg(branch)} https://github.com/${escapeShellArg(repo)}.git ${escapeShellArg(tempDir)}`;
   execSync(cloneCommand, {
     stdio: ["ignore", "ignore", "ignore"],
     cwd: process.cwd(),
   });
+  logger.success(`Downloaded repository ${repo}`);
 
   // Remove .git directory immediately after cloning
   const gitDir = join(tempDir, ".git");

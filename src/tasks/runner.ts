@@ -65,7 +65,7 @@ export class TaskRunner {
       },
     };
 
-    logger.info(`Running task ${current}/${total}: ${taskName}`);
+    logger.start(`Running task ${current}/${total}: ${taskName}`);
 
     try {
       await task.execute(context);

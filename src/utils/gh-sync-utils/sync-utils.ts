@@ -71,9 +71,11 @@ export async function executeSyncOperations(
       );
 
       if (actionResult.action !== FileAction.NONE) {
-        logger.info(
-          `Action for ${relativeLocalPath}: ${actionResult.action} and source: ${actionResult.sourceFileHash} local: ${actionResult.localFileHash} tracker: ${actionResult.trackerFileHash}`
-        );
+        // logger.info(
+        //   `Action for ${relativeLocalPath}: ${actionResult.action} and source: ${actionResult.sourceFileHash} local: ${actionResult.localFileHash} tracker: ${actionResult.trackerFileHash}`
+        // );
+
+        logger.info(`${actionResult.action}: ${relativeLocalPath}`);
       }
 
       // Execute the action
@@ -291,7 +293,7 @@ export function logSyncSummary(
   const scope = isRepoLevel && repoName ? `Repository ${repoName}` : "Overall";
 
   // Only log action breakdown, not the confusing summary line
-  logger.info(
+  logger.success(
     `${scope} action breakdown: ${summary.copyCount} copied, ${summary.noneCount} unchanged, ${summary.mergeCount} need merge, ${summary.updateTrackerCount} tracker updates`
   );
 

@@ -37,7 +37,7 @@ export function updateTrackerStructure(
     };
   } else {
     // Always update the tracker structure while preserving existing data
-    logger.info(`Updating tracker structure for repository ${repo}`);
+    // logger.info(`Updating tracker structure for repository ${repo}`);
 
     // Generate the new structure
     const newStructure = generateRepoStructure(repoGroup, trackerData);

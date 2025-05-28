@@ -84,9 +84,7 @@ export async function processRepo(
   );
 
   if (!shouldFetchResult.shouldFetch) {
-    logger.info(
-      `Repository ${repo} is already up to date, updating tracker structure`
-    );
+    logger.success(`Repository ${repo} is already up to date`);
 
     // Always update the tracker file structure
     updateTrackerStructure(repoGroup, trackerConfig, cwd);
@@ -220,9 +218,7 @@ async function checkIfShouldFetch(
 
   // Always get the latest commit hash for tracking purposes
   try {
-    logger.info(
-      `Checking for updates in repository ${repo} (branch: ${branch})`
-    );
+    logger.box(`Syncing repository ${repo} (branch: ${branch})`);
     latestCommitHash = getLatestCommitHash(repo, branch);
 
     // Only check if we should fetch when sync is enabled and force is disabled
@@ -237,7 +233,9 @@ async function checkIfShouldFetch(
         return { shouldFetch, latestCommitHash };
       }
 
-      logger.info(`Updates found in repository ${repo}, proceeding with fetch`);
+      logger.success(
+        `Updates found in repository ${repo}, proceeding with fetch`
+      );
     } else if (force) {
       logger.info(
         `Force option enabled for repository ${repo}, proceeding with fetch regardless of updates`
@@ -385,7 +383,7 @@ function updateTrackerWithLatestData(
   filePaths: FetchFile[],
   forkRepo?: string
 ): void {
-  logger.info(`Updating sync data for repository ${repo}`);
+  // logger.info(`Updating sync data for repository ${repo}`);
 
   // Make sure the repo entry exists with updated commit hash
   if (!trackerConfig.repos[repo]) {
