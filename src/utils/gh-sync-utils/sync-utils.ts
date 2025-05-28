@@ -70,13 +70,7 @@ export async function executeSyncOperations(
         sourceCommitHash
       );
 
-      if (actionResult.action !== FileAction.NONE) {
-        // logger.info(
-        //   `Action for ${relativeLocalPath}: ${actionResult.action} and source: ${actionResult.sourceFileHash} local: ${actionResult.localFileHash} tracker: ${actionResult.trackerFileHash}`
-        // );
-
-        logger.info(`${actionResult.action}: ${relativeLocalPath}`);
-      }
+      // Logging is now handled by logSyncDetails after all operations are complete
 
       // Execute the action
       const syncResult = {
@@ -277,6 +271,28 @@ export function generateSyncSummary(results: FileSyncResult[]): SyncSummary {
   }
 
   return summary;
+}
+
+/**
+ * Logs detailed information about file sync operations
+ */
+export function logSyncDetails(results: FileSyncResult[]): void {
+  if (!results.length) return;
+
+  logger.log(""); // Empty line before details
+  logger.info("File synchronization details:");
+  logger.log("=".repeat(80));
+
+  for (const result of results) {
+    if (result.actionResult.action !== FileAction.NONE) {
+      logger.log(
+        `${result.actionResult.action.toString().padEnd(10)} ${result.operation.relativeLocalPath}`
+      );
+    }
+  }
+
+  logger.log("=".repeat(80));
+  logger.log(""); // Empty line after details
 }
 
 /**

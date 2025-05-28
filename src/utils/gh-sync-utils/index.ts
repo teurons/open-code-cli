@@ -26,6 +26,7 @@ export {
   executeSyncOperations,
   generateSyncSummary,
   logSyncSummary,
+  logSyncDetails,
 } from "./sync-utils";
 
 // Export tracker utilities

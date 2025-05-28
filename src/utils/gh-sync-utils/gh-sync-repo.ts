@@ -15,6 +15,7 @@ import {
   FileSyncResult,
   generateSyncSummary,
   logSyncSummary,
+  logSyncDetails,
   syncDirectoryChanges,
   handleDeletedFiles,
   updateTrackerStructure,
@@ -161,6 +162,9 @@ export async function processRepo(
         }
       }
     }
+
+    // Log detailed sync information
+    logSyncDetails(syncResult.results);
 
     // Generate and log repository-level summary
     const repoSummary = generateSyncSummary(syncResult.results);
