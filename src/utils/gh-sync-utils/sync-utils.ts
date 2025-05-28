@@ -70,9 +70,11 @@ export async function executeSyncOperations(
         sourceCommitHash
       );
 
-      logger.info(
-        `Action for ${relativeLocalPath}: ${actionResult.action} and source: ${actionResult.sourceFileHash} local: ${actionResult.localFileHash} tracker: ${actionResult.trackerFileHash}`
-      );
+      if (actionResult.action !== FileAction.NONE) {
+        logger.info(
+          `Action for ${relativeLocalPath}: ${actionResult.action} and source: ${actionResult.sourceFileHash} local: ${actionResult.localFileHash} tracker: ${actionResult.trackerFileHash}`
+        );
+      }
 
       // Execute the action
       const syncResult = {
