@@ -130,12 +130,13 @@ export async function processRepo(
     );
 
     // Execute all file sync operations in batch and get updated file data and results
-    const syncResult = await executeSyncOperations(
+    const { updatedFiles, results } = await executeSyncOperations(
       syncOperations,
       trackerConfig,
-      latestCommitHash
+      latestCommitHash,
+      force
     );
-    fileData = syncResult.updatedFiles;
+    fileData = updatedFiles;
 
     // Handle files that were deleted in source but exist in local
     // This is done after the main sync to ensure we have all source files first
@@ -164,16 +165,16 @@ export async function processRepo(
     }
 
     // Log detailed sync information
-    logSyncDetails(syncResult.results);
+    logSyncDetails(results);
 
     // Generate and log repository-level summary
-    const repoSummary = generateSyncSummary(syncResult.results);
+    const repoSummary = generateSyncSummary(results);
     logSyncSummary(repoSummary, true, repo);
 
     // Return the results from this repo processing
     return {
       repo,
-      results: syncResult.results,
+      results,
       success: repoSummary.failCount === 0,
     };
   } catch (error) {

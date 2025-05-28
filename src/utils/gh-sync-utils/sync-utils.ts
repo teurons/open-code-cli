@@ -20,7 +20,8 @@ import { getOpenRouterApiKey, getOpenRouterModel } from "../config";
 export async function executeSyncOperations(
   operations: FileSyncOperation[],
   trackerConfig: TrackerConfig,
-  sourceCommitHash?: string
+  sourceCommitHash?: string,
+  force: boolean = false
 ): Promise<{
   updatedFiles: Record<
     string,
@@ -67,7 +68,8 @@ export async function executeSyncOperations(
         repo,
         relativeLocalPath,
         trackerConfig,
-        sourceCommitHash
+        sourceCommitHash,
+        force
       );
 
       // Logging is now handled by logSyncDetails after all operations are complete

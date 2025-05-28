@@ -59,8 +59,18 @@ export function actionOnFile(
   repo: string,
   relativeLocalPath: string,
   trackerConfig: TrackerConfig,
-  sourceCommitHash?: string
+  sourceCommitHash?: string,
+  force: boolean = false
 ): FileActionResult {
+  // If force is true, always return COPY action
+  if (force) {
+    return {
+      action: FileAction.COPY,
+      sourceFileHash: getFileHash(sourcePath),
+      localFileHash: getFileHash(localPath),
+      trackerFileHash: null,
+    };
+  }
   // If local file doesn't exist, we need to copy it
   if (!existsSync(localPath)) {
     return {
