@@ -66,7 +66,7 @@ open-code-cli workflow sync-config.json
 | sync        | boolean   | No       | Whether to sync this repository (default: true)  |
 | force       | boolean   | No       | Force sync even if files haven't changed         |
 | branch      | string    | No       | Branch to sync from (default: main)              |
-| forkRepo    | string    | No       | Fork repository to use instead of the main repo  |
+| forkRepo    | string    | No       | (For contribute command) Fork repository to use for creating pull requests  |
 | files       | File[]    | Yes      | Array of file mappings                           |
 
 
@@ -136,7 +136,7 @@ open-code-cli workflow sync-config.json
 2. If the remote file is different, it will be downloaded and saved locally
 3. If `force: true`, files will be re-downloaded even if they haven't changed
 4. The tool maintains a cache of file hashes to track changes
-5. Only changed files are downloaded to minimize network usage
+5. The repository is cloned once, and only changed files are copied locally
 
 ### Best Practices
 
@@ -160,13 +160,51 @@ This will prompt you for your API key and preferred model, storing the configura
 
 ### File Action Decision Algorithm
 
-The `actionOnFile` function determines what action to take on a file during synchronization by comparing file hashes:
+The `actionOnFile` function determines what action to take on a file during synchronization by comparing file hashes and checking the tracker state:
 
 ```
-Function: actionOnFile(sourcePath, localPath, repo, relativeLocalPath, trackerConfig, sourceCommitHash)
+Function: actionOnFile(
+  sourcePath,
+  localPath,
+  repo,
+  relativeLocalPath,
+  trackerConfig,
+  sourceCommitHash,
+  force = false
+)
 
-1. If local file doesn't exist:
+1. If force is true:
+   - Return COPY action (overrides all other logic)
+
+2. If local file doesn't exist:
    - Return COPY action
+
+3. Calculate hashes:
+   - sourceFileHash = hash of source file
+   - localFileHash = hash of local file
+   - trackerFileHash = hash from tracker (if exists)
+   - trackerAction = previous action from tracker (if exists)
+   - lastCommitHash = last commit hash from tracker
+   - currentCommitHash = sourceCommitHash or lastCommitHash
+
+4. Special case for previously merged files (trackerAction === 'MERGE'):
+   - If commit hash hasn't changed: Return NONE
+   - If commit hash changed: Return MERGE
+
+5. If no tracking data exists (first sync):
+   - Return COPY action
+
+6. Compare hashes to determine action:
+   - If localFileHash === trackerFileHash && localFileHash !== sourceFileHash:
+     - Return COPY (only source changed)
+   - If localFileHash !== trackerFileHash && trackerFileHash === sourceFileHash:
+     - Return NONE (only local changed)
+   - If localFileHash !== trackerFileHash && localFileHash === sourceFileHash:
+     - Return UPDATE_TRACKER (local changes pushed to source)
+   - If localFileHash !== trackerFileHash && localFileHash !== sourceFileHash:
+     - Return MERGE (both source and local changed)
+
+7. Default: Return NONE (no changes detected)
 
 2. Calculate hashes:
    - sourceFileHash = hash of source file
