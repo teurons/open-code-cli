@@ -273,26 +273,130 @@ export function generateSyncSummary(results: FileSyncResult[]): SyncSummary {
   return summary;
 }
 
+interface TreeNode {
+  name: string;
+  children: Map<string, TreeNode>;
+  files: string[];
+  action: FileAction;
+}
+
 /**
- * Logs detailed information about file sync operations
+ * Builds a tree structure from file paths
+ */
+function buildTree(
+  files: { path: string; action: FileAction }[]
+): Map<FileAction, TreeNode> {
+  const actionTrees = new Map<FileAction, TreeNode>();
+
+  for (const { path, action } of files) {
+    if (!actionTrees.has(action)) {
+      actionTrees.set(action, {
+        name: "",
+        children: new Map(),
+        files: [],
+        action,
+      });
+    }
+
+    const parts = path.split("/");
+    const filename = parts.pop() || "";
+    let currentNode = actionTrees.get(action)!;
+
+    // Traverse or create the directory structure
+    for (const part of parts) {
+      if (!currentNode.children.has(part)) {
+        currentNode.children.set(part, {
+          name: part,
+          children: new Map(),
+          files: [],
+          action,
+        });
+      }
+      currentNode = currentNode.children.get(part)!;
+    }
+
+    // Add the file to the current directory
+    if (filename) {
+      currentNode.files.push(filename);
+    }
+  }
+
+  return actionTrees;
+}
+
+/**
+ * Formats a tree node and its children as a string
+ */
+function formatTreeNode(
+  node: TreeNode,
+  isLast: boolean,
+  prefix: string[],
+  output: string[]
+): void {
+  // Skip root node if it's empty
+  if (node.name) {
+    const connector = isLast ? "└── " : "├── ";
+    output.push([...prefix, connector + node.name].join(""));
+  }
+
+  const newPrefix = [...prefix, isLast ? "    " : "│   "];
+
+  // Process directories first
+  const sortedDirs = Array.from(node.children.entries()).sort(
+    ([nameA], [nameB]) => nameA.localeCompare(nameB)
+  );
+
+  for (let i = 0; i < sortedDirs.length; i++) {
+    const dirEntry = sortedDirs[i];
+    if (!dirEntry) continue;
+    const [_, child] = dirEntry;
+    const isLastChild = i === sortedDirs.length - 1 && node.files.length === 0;
+    formatTreeNode(child, isLastChild, newPrefix, output);
+  }
+
+  // Then process files
+  const sortedFiles = [...node.files].sort();
+  for (let i = 0; i < sortedFiles.length; i++) {
+    const isLastFile = i === sortedFiles.length - 1;
+    const connector = isLastFile ? "└── " : "├── ";
+    output.push([...newPrefix, connector + sortedFiles[i]].join(""));
+  }
+}
+
+/**
+ * Logs detailed information about file sync operations, grouped by action type
  */
 export function logSyncDetails(results: FileSyncResult[]): void {
   if (!results.length) return;
 
-  logger.log(""); // Empty line before details
-  logger.info("File synchronization details:");
-  logger.log("=".repeat(80));
+  const output: string[] = ["File synchronization details:", "=".repeat(80)];
 
-  for (const result of results) {
-    if (result.actionResult.action !== FileAction.NONE) {
-      logger.log(
-        `${result.actionResult.action.toString().padEnd(10)} ${result.operation.relativeLocalPath}`
-      );
-    }
+  // Prepare files for tree building
+  const files = results
+    .filter(result => result.actionResult.action !== FileAction.NONE)
+    .map(result => ({
+      path: result.operation.relativeLocalPath,
+      action: result.actionResult.action,
+    }));
+
+  // Build tree structure
+  const actionTrees = buildTree(files);
+
+  // Sort actions for consistent output
+  const sortedActions = Array.from(actionTrees.entries()).sort(
+    ([actionA], [actionB]) => actionA.localeCompare(actionB)
+  );
+
+  // Generate output
+  for (const actionTree of sortedActions) {
+    if (!actionTree) continue;
+    const [action, tree] = actionTree;
+    output.push(`\n${action.toUpperCase()}:`);
+    formatTreeNode(tree, true, [], output);
   }
 
-  logger.log("=".repeat(80));
-  logger.log(""); // Empty line after details
+  output.push("\n" + "=".repeat(80));
+  logger.log(output.join("\n"));
 }
 
 /**
