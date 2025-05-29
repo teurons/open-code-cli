@@ -10,6 +10,7 @@ import {
   FileSyncResult,
 } from "../utils/gh-sync-utils";
 import { RepoGroup, processRepo } from "../utils/gh-sync-utils/gh-sync-repo";
+import { logger } from "../logger";
 
 export class GhSyncTask implements Task {
   /**
@@ -37,13 +38,41 @@ export class GhSyncTask implements Task {
     validateDependencies(depends);
     validateReposConfiguration(repos as unknown[]);
 
-    const typedRepos = repos as unknown[];
+    const typedRepos = repos as unknown[] as RepoGroup[];
     const allResults: FileSyncResult[] = [];
 
-    // Process each repository group directly
-    for (const repoGroup of typedRepos) {
-      const typedRepoGroup = repoGroup as RepoGroup;
-      const { repo, files } = typedRepoGroup;
+    // Show repository selection prompt
+    logger.info(
+      "Select repositories to sync (use spacebar to select multiple, enter to confirm):"
+    );
+
+    const repoOptions = typedRepos.map(repoGroup => ({
+      title: repoGroup.repo,
+      value: repoGroup.repo,
+    }));
+
+    const selectedRepos = await logger.prompt("Choose repositories:", {
+      type: "multiselect",
+      options: repoOptions.map(opt => opt.title),
+    });
+
+    if (
+      !selectedRepos ||
+      !Array.isArray(selectedRepos) ||
+      selectedRepos.length === 0
+    ) {
+      logger.info("No repositories selected. Exiting.");
+      return;
+    }
+
+    const selectedReposSet = new Set(selectedRepos as string[]);
+    const reposToProcess = typedRepos.filter(repoGroup =>
+      selectedReposSet.has(repoGroup.repo)
+    );
+
+    // Process each selected repository
+    for (const repoGroup of reposToProcess) {
+      const { repo, files } = repoGroup;
 
       // Validate repository group structure
       validateRepositoryGroup(repo, files);
@@ -53,7 +82,7 @@ export class GhSyncTask implements Task {
 
       // Create a modified repoGroup with the processed repo name
       const processedRepoGroup = {
-        ...typedRepoGroup,
+        ...repoGroup,
         repo: processedRepo,
       };
 
