@@ -105,9 +105,9 @@ export async function executeContributeSyncOperations(
 
     try {
       if (dryRun) {
-        logger.info(
-          `[DRY RUN] Would ${operationType} ${relativeLocalPath} to ${relativeSourcePath}`
-        );
+        // logger.info(
+        //   `[DRY RUN] Would ${operationType} ${relativeLocalPath} to ${relativeSourcePath}`
+        // );
         results.push({
           operation,
           success: true,
@@ -123,11 +123,11 @@ export async function executeContributeSyncOperations(
           }
 
           // Copy the file
-          logger.info(
-            `Copying file: ${absoluteLocalPath} -> ${absoluteSourcePath}`
-          );
+          // logger.info(
+          //   `Copying file: ${absoluteLocalPath} -> ${absoluteSourcePath}`
+          // );
           copyFileSync(absoluteLocalPath, absoluteSourcePath);
-          logger.info(`Copied ${relativeLocalPath} to ${relativeSourcePath}`);
+          // logger.info(`Copied ${relativeLocalPath} to ${relativeSourcePath}`);
 
           results.push({
             operation,

@@ -67,14 +67,43 @@ export async function handleContributeCommand(
     // Read tracker configuration
     const trackerConfig = readTrackerConfig(cwd);
 
-    // Find repos with forkRepo
-    const reposWithFork = Object.entries(trackerConfig.repos)
+    // Get all repos with fork
+    let reposWithFork = Object.entries(trackerConfig.repos)
       .filter(([_, repoData]) => repoData.forkRepo)
       .map(([repo, repoData]) => ({
         repo,
         forkRepo: repoData.forkRepo!,
         filePaths: repoData.filePaths,
       }));
+
+    // Always prompt for repository selection
+    logger.info(
+      "Select repositories to contribute to (use spacebar to select multiple, enter to confirm):"
+    );
+
+    const repoOptions = reposWithFork.map(repo => ({
+      title: repo.repo,
+      value: repo.repo,
+    }));
+
+    const selectedRepos = await logger.prompt("Choose repositories:", {
+      type: "multiselect",
+      options: repoOptions.map(opt => opt.title),
+    });
+
+    if (
+      !selectedRepos ||
+      !Array.isArray(selectedRepos) ||
+      selectedRepos.length === 0
+    ) {
+      logger.info("No repositories selected. Exiting.");
+      return;
+    }
+
+    const selectedReposSet = new Set(selectedRepos as string[]);
+    reposWithFork = reposWithFork.filter(repo =>
+      selectedReposSet.has(repo.repo)
+    );
 
     if (reposWithFork.length === 0) {
       logger.error(red("No repositories with fork found in tracker"));

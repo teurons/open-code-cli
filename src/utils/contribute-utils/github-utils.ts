@@ -44,7 +44,10 @@ export function cloneForkRepo(forkRepo: string): {
 
   logger.info(`Cloning fork repository ${forkRepo} to temporary directory`);
   const cloneCommand = `git clone https://github.com/${forkRepo}.git ${escapeShellArg(tempDir)}`;
-  execSync(cloneCommand, { stdio: "inherit", cwd: process.cwd() });
+  execSync(cloneCommand, {
+    stdio: ["ignore", "ignore", "ignore"],
+    cwd: process.cwd(),
+  });
 
   return {
     tempDir,

@@ -1,5 +1,7 @@
 import { ArgumentsCamelCase, Argv } from "yargs";
 import { handleContributeCommand } from "../utils/contribute-utils/contribute-handler";
+import { logger } from "../logger";
+import { red } from "picocolors";
 
 interface ContributeArgv {
   dryRun?: boolean;
@@ -21,7 +23,12 @@ export function builder(yargs: Argv<ContributeArgv>): Argv {
 }
 
 export async function handler(argv: ArgumentsCamelCase<ContributeArgv>) {
-  await handleContributeCommand({
-    dryRun: argv.dryRun,
-  });
+  try {
+    await handleContributeCommand({
+      dryRun: argv.dryRun,
+    });
+  } catch (error) {
+    logger.error(red(`Error in gh-contribute: ${(error as Error).message}`));
+    process.exit(1);
+  }
 }
