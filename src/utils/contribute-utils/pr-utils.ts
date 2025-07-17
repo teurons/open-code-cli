@@ -20,7 +20,7 @@ export function getPullRequestStatus(
 
     return {
       prNumber: prStatus.number,
-      status: prStatus.state,
+      status: prStatus.state.toLowerCase() as "open" | "closed" | "merged",
       branchName: "", // We don't get this from the API, but it's not needed here
       lastUpdated: new Date().toISOString(),
     };
