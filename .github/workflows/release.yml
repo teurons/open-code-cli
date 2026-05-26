@@ -28,7 +28,7 @@ jobs:
           node-version: 'lts/*'
 
       - name: Install pnpm
-        run: npm i pnpm -g
+        run: npm i pnpm@10 -g
 
       - name: Install dependencies
         run: pnpm install
