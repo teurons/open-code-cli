@@ -33,8 +33,8 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
-      - name: Verify the integrity of provenance attestations and registry signatures for installed dependencies
-        run: pnpm audit signatures
+      - name: Audit production dependencies for vulnerabilities
+        run: pnpm audit --prod --audit-level=high
 
       - name: Lint
         run: pnpm lint

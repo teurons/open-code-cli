@@ -2,5 +2,51 @@ onlyBuiltDependencies:
   - esbuild
 
 overrides:
+  # brace-expansion
   "brace-expansion@>=1.0.0 <=1.1.11": ">=1.1.12"
   "brace-expansion@>=2.0.0 <=2.0.1": ">=2.0.2"
+  "brace-expansion@>=5.0.0 <5.0.5": "5.0.5"
+  # form-data (via axios — axios upgrade handles this, belt+suspenders)
+  "form-data@>=4.0.0 <4.0.4": "4.0.4"
+  # handlebars (via semantic-release)
+  handlebars: "4.7.9"
+  # glob (two major versions in tree)
+  "glob@>=10.0.0 <11.0.0": "^10.5.0"
+  "glob@>=11.0.0 <12.0.0": "^11.1.0"
+  # minimatch (multiple major versions)
+  "minimatch@>=3.0.0 <4.0.0": "^3.1.4"
+  "minimatch@>=5.0.0 <6.0.0": "^5.1.8"
+  "minimatch@>=9.0.0 <10.0.0": "^9.0.7"
+  "minimatch@>=10.0.0 <11.0.0": "^10.2.3"
+  # jws (via openrouter-kit > jsonwebtoken)
+  jws: "4.0.1"
+  # defu (via giget)
+  defu: "6.1.7"
+  # lodash / lodash-es
+  lodash: "4.18.1"
+  lodash-es: "4.18.1"
+  # rollup (via tsup)
+  rollup: "^4.59.0"
+  # flatted (via eslint > file-entry-cache > flat-cache)
+  flatted: "^3.4.2"
+  # picomatch (two major versions)
+  "picomatch@>=2.0.0 <3.0.0": "^2.3.2"
+  "picomatch@>=4.0.0 <5.0.0": "^4.0.4"
+  # js-yaml (two major versions)
+  "js-yaml@>=3.0.0 <4.0.0": "3.14.2"
+  "js-yaml@>=4.0.0 <5.0.0": "^4.1.1"
+  # ajv (two major versions — use caret to stay within major)
+  "ajv@>=6.0.0 <7.0.0": "^6.14.0"
+  "ajv@>=8.0.0 <9.0.0": "^8.18.0"
+  # follow-redirects (via axios — upgrade handles this)
+  follow-redirects: "^1.16.0"
+  # fast-uri (via @commitlint)
+  fast-uri: "^3.1.2"
+  # yaml (via tsup > postcss-load-config)
+  yaml: "^2.8.3"
+  # @eslint/plugin-kit (via eslint)
+  "@eslint/plugin-kit": "^0.3.4"
+  # tmp (via commitizen)
+  tmp: "0.2.5"
+  # diff (via ts-node)
+  "diff@>=4.0.0 <5.0.0": "4.0.4"
